@@ -1,22 +1,27 @@
 # Local Music Player
 
-Local-first browser music player that plays your local audio files and can optionally sync Spotify liked-song metadata.
+Local-first music player web app for your own audio files, with optional Spotify liked-song metadata matching.
 
-## What You Need
-This project does **not** use `npm install`.
-You only need:
-- Node.js (to run the build script)
-- Python 3 (to run a local web server)
-- A modern browser (Chrome, Edge, Firefox, or Safari)
+## Features
+- Import local audio files or folders
+- Play, pause, seek, next, previous, volume control
+- Create and manage playlists
+- Theme/settings support
+- Optional Spotify metadata matching
+- Installable as a PWA with app icons configured
 
----
+## Requirements
+- Node.js LTS (includes npm)
+- Google Chrome (recommended for app mode launcher)
 
-## 1. Download the Project
+This project does not require `npm install`.
 
-### Option A: Download ZIP (easiest)
-1. Open the GitHub repository page.
-2. Click **Code** -> **Download ZIP**.
-3. Extract the ZIP to a folder you can find easily.
+## 1. Get the Project
+
+### Option A: Download ZIP
+1. Open the GitHub repository.
+2. Click `Code` > `Download ZIP`.
+3. Extract the ZIP.
 
 ### Option B: Clone with Git
 ```bash
@@ -24,178 +29,64 @@ git clone https://github.com/Qw1nti/Local-Music-Player.git
 cd Local-Music-Player
 ```
 
----
+## 2. Verify Node.js
 
-## 2. Install Prerequisites (by OS)
-
-## Windows
-
-### Install Node.js
-1. Go to: https://nodejs.org
-2. Download **LTS** version.
-3. Run installer with default options.
-4. Open **PowerShell** and verify:
+### Windows (PowerShell)
 ```powershell
 node -v
 npm -v
 ```
 
-### Install Python 3
-1. Go to: https://python.org/downloads
-2. Download latest Python 3 for Windows.
-3. During install, check **Add Python to PATH**.
-4. Verify in PowerShell:
-```powershell
-python --version
-```
-If that fails, try:
-```powershell
-py --version
-```
-
-## macOS
-
-### Install Node.js
-1. Go to: https://nodejs.org
-2. Download **LTS** `.pkg` installer.
-3. Install, then verify in Terminal:
+### macOS/Linux (Terminal)
 ```bash
 node -v
 npm -v
 ```
 
-### Install Python 3
-macOS usually has Python 3 already. Verify:
-```bash
-python3 --version
-```
-If missing, install from https://python.org/downloads or Homebrew:
-```bash
-brew install python
-```
+## 3. Run the App
 
-## Linux (Ubuntu/Debian)
-
-### Install Node.js + npm
-```bash
-sudo apt update
-sudo apt install -y nodejs npm
-```
-Verify:
-```bash
-node -v
-npm -v
-```
-
-### Install Python 3
-```bash
-sudo apt install -y python3
-```
-Verify:
-```bash
-python3 --version
-```
-
----
-
-## 3. Open Terminal in the Project Folder
-
-If you used ZIP extraction, open terminal in that folder.
-
-Example:
-```bash
-cd /path/to/Local-Music-Player
-```
-
-On Windows PowerShell:
-```powershell
-cd C:\path\to\Local-Music-Player
-```
-
----
-
-## 4. Run the App (Step-by-Step)
-
-## Option A: Run from terminal (all OS)
-
-### Quick run (development mode)
+### Option A: Standard browser run (all OS)
+Development server:
 ```bash
 npm run dev
 ```
-Open in browser:
-- `http://127.0.0.1:5173`
+Open `http://127.0.0.1:5173`
 
-### Build + production preview
-1. Build:
+Production preview:
 ```bash
 npm run build
-```
-2. Preview build:
-```bash
 npm run preview
 ```
-Open:
-- `http://127.0.0.1:4173`
+Open `http://127.0.0.1:4173`
 
----
+### Option B: App-mode launcher (recommended)
+Use this if you want it to behave like a desktop app window.
 
-## Option B: Run from executable/script launcher
-
-### macOS (double-click launcher)
-If you downloaded the ZIP, you can run the app without typing commands:
-1. Open the extracted project folder.
-2. Double-click `Launch-LocalMixer.command`.
-3. If macOS blocks it the first time:
-   - Right-click `Launch-LocalMixer.command` -> **Open** -> **Open**.
-4. Your app will build and launch in Chrome app mode.
-
-You can also run it from Terminal:
+Windows/macOS/Linux:
 ```bash
 npm run prod:launch
 ```
-Stop managed preview server:
+
+Stop manually if needed:
 ```bash
 npm run prod:stop
 ```
 
----
+### Important launcher behavior
+- `prod:launch` starts a managed local server and opens Chrome app mode.
+- When that managed Chrome app window is closed, the managed server is automatically stopped.
+- If Chrome is not available and fallback browser open is used, auto-stop on close is not guaranteed.
 
-### Linux (launcher script)
-From the project folder:
-```bash
-chmod +x scripts/launch-localmixer-prod.sh
-./scripts/launch-localmixer-prod.sh
-```
-Stop:
-```bash
-./scripts/stop-localmixer-prod.sh
-```
+## 4. First-Time Usage
+1. Click `Import Files` or `Import Folder`.
+2. Select audio files (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.flac`).
+3. Use playback controls at the bottom.
+4. Create playlists in the sidebar.
 
-### Windows (ZIP + one command)
-After extracting ZIP and opening PowerShell in the project folder:
-```powershell
-npm run prod:launch
-```
-Stop:
-```powershell
-npm run prod:stop
-```
-
----
-
-## 5. First-Time App Usage
-1. Click **Import Files** or **Import Folder**.
-2. Select music files (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.flac`).
-3. Use player controls at bottom (play, seek, volume, next/prev).
-4. Create playlists from sidebar.
-
----
-
-## 6. Optional Spotify Setup
-If you want Spotify metadata matching:
-1. Create a Spotify app in Spotify Developer Dashboard.
-2. Set redirect URI to your app URL (must match exactly).
-3. Update `config.js`:
+## 5. Optional Spotify Setup
+1. Create an app in Spotify Developer Dashboard.
+2. Add your redirect URI exactly.
+3. Edit `config.js`:
 
 ```js
 window.APP_CONFIG = {
@@ -204,25 +95,24 @@ window.APP_CONFIG = {
 };
 ```
 
-For GitHub Pages deployment, use your Pages URL as redirect URI.
+For GitHub Pages, use your Pages URL as redirect URI.
 
----
-
-## 7. Deploy to GitHub Pages
+## 6. Deploy to GitHub Pages
 This repo includes `.github/workflows/deploy.yml`.
 
-1. Push code to `main` branch.
-2. GitHub repo -> **Settings** -> **Pages**.
-3. Set **Source** to **GitHub Actions**.
-4. Wait for Actions workflow to finish.
-
----
+1. Push to `main`.
+2. GitHub repository > `Settings` > `Pages`.
+3. Set Source to `GitHub Actions`.
+4. Wait for the deploy workflow to finish.
 
 ## Troubleshooting
 - `npm` not found: reinstall Node.js and reopen terminal.
-- `python3` not found: install Python 3 and reopen terminal.
-- Port already in use: close old terminal/server, then run command again.
+- `spawn EINVAL` on Windows: pull latest repo changes and run `npm run prod:launch` again.
+- Port already in use: run `npm run prod:stop`, then relaunch.
 - Spotify login fails: redirect URI mismatch is the most common cause.
+
+## Screenshots
+- Add app screenshots here.
 
 ## License
 MIT
