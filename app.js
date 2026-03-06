@@ -30,6 +30,7 @@
     advancedLibraryViews: true,
     smartPlaylists: true
   };
+  const DEFAULT_APP_ICON_SRC = new URL('./icons/icon-192.png', window.location.href).href;
 
   const THEME_LABELS = {
     dark: 'Dark',
@@ -1914,8 +1915,8 @@
 
     const safeArt = sanitizeImageUrl(track?.albumArtUrl, { allowBlob: true, allowHttps: true });
     const artwork = track
-      ? [{ src: safeArt || '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }]
-      : [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }];
+      ? [{ src: safeArt || DEFAULT_APP_ICON_SRC, sizes: '192x192', type: 'image/png' }]
+      : [{ src: DEFAULT_APP_ICON_SRC, sizes: '192x192', type: 'image/png' }];
 
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track?.title || 'Local Mixer',

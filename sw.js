@@ -1,4 +1,4 @@
-const CACHE_NAME = 'local-mixer-v2';
+const CACHE_NAME = 'local-mixer-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,10 @@ const APP_SHELL = [
   './config.js',
   './manifest.webmanifest',
   './favicon.png',
+  './icons/favicon-16x16.png',
+  './icons/favicon-32x32.png',
+  './icons/favicon-48x48.png',
+  './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
