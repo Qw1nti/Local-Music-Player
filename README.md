@@ -1,144 +1,270 @@
-# Local Music Player
+🎵 Local Music Player
 
-Local-first music player web app for your own audio files, with optional Spotify liked-song metadata matching.
+A local-first music player web app for playing your own audio files.
+Includes optional Spotify liked-song metadata matching and can run like a desktop app.
 
-## Features
-- Import local audio files or folders
-- Play, pause, seek, next, previous, volume control
-- Create and manage playlists
-- Theme/settings support
-- Optional Spotify metadata matching
-- Installable as a PWA with app icons configured
+✨ Features
 
-## Requirements
-- Node.js LTS (includes npm)
-- Google Chrome (recommended for app mode launcher)
+🎧 Play local music
 
-This project does not require `npm install`.
+Import individual files or entire folders
 
-## 1. Get the Project
+Supports .mp3, .m4a, .wav, .ogg, .flac
 
-### Option A: Download ZIP
-1. Open the GitHub repository.
-2. Click `Code` > `Download ZIP`.
-3. Extract the ZIP.
+⏯ Full playback controls
 
-### Option B: Clone with Git
-```bash
+Play / Pause
+
+Seek through track
+
+Next / Previous
+
+Volume control
+
+📂 Playlist management
+
+Create playlists
+
+Organize your music library
+
+🎨 Themes & settings
+
+Switch UI themes
+
+Customize app appearance
+
+🔗 Spotify metadata matching (optional)
+
+Match your local songs with Spotify metadata
+
+🖥 Desktop-like experience
+
+Installable Progressive Web App (PWA)
+
+Launch in Chrome app mode
+
+⚙️ Requirements
+
+Before running the app, install:
+
+Node.js LTS (includes npm)
+
+Google Chrome (recommended)
+
+✔ No manual npm install needed in most cases.
+
+📥 1. Get the Project
+Option A — Download ZIP
+
+Open the GitHub repository
+
+Click Code
+
+Select Download ZIP
+
+Extract the ZIP file
+
+Option B — Clone with Git
 git clone https://github.com/Qw1nti/Local-Music-Player.git
 cd Local-Music-Player
-```
-
-## 2. Verify Node.js
-
-### Windows (PowerShell)
-```powershell
+🔍 2. Verify Node.js
+Windows (PowerShell)
 node -v
 npm -v
-```
-
-### macOS/Linux (Terminal)
-```bash
+macOS / Linux (Terminal)
 node -v
 npm -v
-```
 
-## Running the App (One-Click Launch)
+If both commands show versions, you're ready to go.
 
-Use these files from the project root:
+🚀 Running the App (One-Click Launch)
 
-### Windows
-1. Double-click `launch.bat`.
-2. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+Run these launchers from the project root folder.
 
-### macOS
-1. Double-click `launch.command`.
-2. If blocked the first time: right-click `launch.command` > `Open`.
-3. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+🪟 Windows
 
-### Linux
-1. Run once to allow execution:
-```bash
+1️⃣ Double-click:
+
+launch.bat
+
+This script will:
+
+Check Node/npm
+
+Install dependencies if needed
+
+Build the app
+
+Start the server
+
+Open the music player
+
+🍎 macOS
+
+1️⃣ Double-click:
+
+launch.command
+
+If blocked the first time:
+
+Right Click → Open
+🐧 Linux
+
+First allow execution:
+
 chmod +x launch.sh
-```
-2. Double-click `launch.sh` (or run `./launch.sh`).
-3. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+
+Then run:
+
+./launch.sh
+🛑 Stop the Server
 
 Stop the managed server anytime:
-```bash
+
 npm run prod:stop
-```
-
-## 3. Run the App (Terminal)
-
-### Option A: Standard browser run (all OS)
-Development server:
-```bash
+💻 Running from Terminal
+Development Mode
 npm run dev
-```
-Open `http://127.0.0.1:5173`
 
-Production preview:
-```bash
+Open:
+
+http://127.0.0.1:5173
+Production Preview
 npm run build
 npm run preview
-```
-Open `http://127.0.0.1:4173`
 
-### Option B: App-mode launcher (managed Chrome window)
-Use this if you want it to behave like a desktop app window.
+Open:
 
-Windows/macOS/Linux:
-```bash
+http://127.0.0.1:4173
+🖥 Desktop-Style Launch (App Mode)
+
+Launch the app in a standalone Chrome window:
+
 npm run prod:launch
-```
 
-Stop manually if needed:
-```bash
+Behavior:
+
+Starts a managed local server
+
+Opens Chrome in app mode
+
+Closing the window automatically stops the server
+
+Manual stop:
+
 npm run prod:stop
-```
+🎧 First-Time Usage
 
-### Important launcher behavior
-- `prod:launch` starts a managed local server and opens Chrome app mode.
-- When that managed Chrome app window is closed, the managed server is automatically stopped.
-- If Chrome is not available and fallback browser open is used, auto-stop on close is not guaranteed.
+1️⃣ Click Import Files or Import Folder
 
-## 4. First-Time Usage
-1. Click `Import Files` or `Import Folder`.
-2. Select audio files (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.flac`).
-3. Use playback controls at the bottom.
-4. Create playlists in the sidebar.
+2️⃣ Select your music files
 
-## 5. Optional Spotify Setup
-1. Create an app in Spotify Developer Dashboard.
-2. Add your redirect URI exactly.
-3. Edit `config.js`:
+Supported formats:
 
-```js
+.mp3
+.m4a
+.wav
+.ogg
+.flac
+
+3️⃣ Use the playback controls at the bottom
+
+4️⃣ Create playlists in the sidebar
+
+🔗 Optional Spotify Setup
+
+If you want Spotify metadata matching:
+
+1️⃣ Create a Spotify App
+
+Go to:
+
+Spotify Developer Dashboard
+
+Create a new application.
+
+2️⃣ Add Redirect URI
+
+Example:
+
+http://127.0.0.1:4173/
+3️⃣ Edit config.js
 window.APP_CONFIG = {
   spotifyClientId: 'YOUR_CLIENT_ID',
   spotifyRedirectUri: 'http://127.0.0.1:4173/'
 };
-```
 
-For GitHub Pages, use your Pages URL as redirect URI.
+If deploying to GitHub Pages, use your Pages URL as the redirect URI.
 
-## 6. Deploy to GitHub Pages
-This repo includes `.github/workflows/deploy.yml`.
+🌐 Deploy to GitHub Pages
 
-1. Push to `main`.
-2. GitHub repository > `Settings` > `Pages`.
-3. Set Source to `GitHub Actions`.
-4. Wait for the deploy workflow to finish.
+This repository already includes a deployment workflow.
 
-## Troubleshooting
-- `npm` not found: reinstall Node.js and reopen terminal.
-- `spawn EINVAL` on Windows: pull latest repo changes and run `npm run prod:launch` again.
-- Port already in use: run `npm run prod:stop`, then relaunch.
-- Spotify login fails: redirect URI mismatch is the most common cause.
+Steps:
 
-## Screenshots
-- Add app screenshots here.
+1️⃣ Push to the main branch
 
-## License
-MIT
+2️⃣ Go to:
+
+Repository → Settings → Pages
+
+3️⃣ Set Source → GitHub Actions
+
+4️⃣ Wait for the workflow to complete.
+
+🛠 Troubleshooting
+npm not found
+
+Reinstall Node.js and reopen the terminal.
+
+spawn EINVAL on Windows
+
+Pull the latest repository changes and run:
+
+npm run prod:launch
+Port already in use
+npm run prod:stop
+
+Then relaunch.
+
+Spotify login fails
+
+Most common cause:
+
+⚠ Redirect URI mismatch in Spotify dashboard.
+
+📸 Screenshots
+
+Add screenshots here.
+
+Example:
+
+/screenshots/player.png
+/screenshots/library.png
+📄 License
+
+MIT License
+
+✅ Improvements made:
+
+Better visual hierarchy
+
+Emoji navigation
+
+Clear step-by-step setup
+
+Cleaner code blocks
+
+More readable GitHub formatting
+
+If you want, I can also make a 🔥 “really polished open-source style README” with:
+
+badges (build status, license, stars)
+
+screenshots layout
+
+feature GIFs
+
+install buttons
+
+better GitHub marketing style.
