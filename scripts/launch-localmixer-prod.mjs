@@ -11,12 +11,17 @@ const url = `http://127.0.0.1:${port}`;
 const pidFile = resolve(tmpdir(), 'localmixer-preview.pid');
 
 function npmCommand() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  return 'npm';
 }
 
 function run(command, args, options = {}) {
   return new Promise((resolveRun, rejectRun) => {
-    const child = spawn(command, args, { stdio: 'inherit', cwd: appDir, shell: false, ...options });
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      cwd: appDir,
+      shell: process.platform === 'win32',
+      ...options
+    });
     child.on('error', rejectRun);
     child.on('exit', (code) => {
       if (code === 0) resolveRun();
@@ -55,7 +60,12 @@ function stopExisting() {
 
 function openApp(targetUrl) {
   const launchDetached = (command, args) => {
-    const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: 'ignore',
+      shell: false,
+      windowsHide: true
+    });
     child.on('error', () => {});
     child.unref();
   };
@@ -66,11 +76,11 @@ function openApp(targetUrl) {
   }
 
   if (process.platform === 'win32') {
-    const hasChrome = spawnSync('cmd', ['/c', 'where chrome'], { stdio: 'ignore' }).status === 0;
+    const hasChrome = spawnSync('where', ['chrome'], { stdio: 'ignore', shell: true }).status === 0;
     if (hasChrome) {
-      launchDetached('cmd', ['/c', 'start', '', 'chrome', `--app=${targetUrl}`]);
+      launchDetached('cmd.exe', ['/d', '/s', '/c', `start "" chrome --app="${targetUrl}"`]);
     } else {
-      launchDetached('cmd', ['/c', 'start', '', targetUrl]);
+      launchDetached('cmd.exe', ['/d', '/s', '/c', `start "" "${targetUrl}"`]);
     }
     return;
   }
@@ -90,7 +100,11 @@ async function main() {
   const server = spawn(process.execPath, [resolve(__dirname, 'static-server.mjs'), '--port', String(port), '--dir', 'dist'], {
     cwd: appDir,
     detached: true,
-    stdio: 'ignore'
+    stdio: 'ignore',
+    windowsHide: true
+  });
+  server.on('error', (err) => {
+    console.error(`Failed to start preview server: ${err.message}`);
   });
   server.unref();
   writeFileSync(pidFile, String(server.pid));
