@@ -116,14 +116,16 @@ cd C:\path\to\Local-Music-Player
 
 ## 4. Run the App (Step-by-Step)
 
-## Quick run (development mode)
+## Option A: Run from terminal (all OS)
+
+### Quick run (development mode)
 ```bash
 npm run dev
 ```
 Open in browser:
 - `http://127.0.0.1:5173`
 
-## Build + production preview
+### Build + production preview
 1. Build:
 ```bash
 npm run build
@@ -137,8 +139,17 @@ Open:
 
 ---
 
-## 5. macOS One-Click Launch
-If you are on macOS, you can launch build + preview + Chrome app mode with:
+## Option B: Run from executable/script launcher
+
+### macOS (double-click launcher)
+If you downloaded the ZIP, you can run the app without typing commands:
+1. Open the extracted project folder.
+2. Double-click `Launch-LocalMixer.command`.
+3. If macOS blocks it the first time:
+   - Right-click `Launch-LocalMixer.command` -> **Open** -> **Open**.
+4. Your app will build and launch in Chrome app mode.
+
+You can also run it from Terminal:
 ```bash
 npm run prod:launch
 ```
@@ -149,7 +160,30 @@ npm run prod:stop
 
 ---
 
-## 6. First-Time App Usage
+### Linux (launcher script)
+From the project folder:
+```bash
+chmod +x scripts/launch-localmixer-prod.sh
+./scripts/launch-localmixer-prod.sh
+```
+Stop:
+```bash
+./scripts/stop-localmixer-prod.sh
+```
+
+### Windows (ZIP + one command)
+After extracting ZIP and opening PowerShell in the project folder:
+```powershell
+npm run prod:launch
+```
+Stop:
+```powershell
+npm run prod:stop
+```
+
+---
+
+## 5. First-Time App Usage
 1. Click **Import Files** or **Import Folder**.
 2. Select music files (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.flac`).
 3. Use player controls at bottom (play, seek, volume, next/prev).
@@ -157,7 +191,7 @@ npm run prod:stop
 
 ---
 
-## 7. Optional Spotify Setup
+## 6. Optional Spotify Setup
 If you want Spotify metadata matching:
 1. Create a Spotify app in Spotify Developer Dashboard.
 2. Set redirect URI to your app URL (must match exactly).
@@ -174,7 +208,7 @@ For GitHub Pages deployment, use your Pages URL as redirect URI.
 
 ---
 
-## 8. Deploy to GitHub Pages
+## 7. Deploy to GitHub Pages
 This repo includes `.github/workflows/deploy.yml`.
 
 1. Push code to `main` branch.
