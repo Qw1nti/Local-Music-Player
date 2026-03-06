@@ -1,15 +1,15 @@
 const CACHE_NAME = 'local-mixer-v2';
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/app.css',
-  '/app.js',
-  '/theme-init.js',
-  '/config.js',
-  '/manifest.webmanifest',
-  '/favicon.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  './',
+  './index.html',
+  './app.css',
+  './app.js',
+  './theme-init.js',
+  './config.js',
+  './manifest.webmanifest',
+  './favicon.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,14 +30,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+  const filePath = url.pathname.split('/').pop() || '';
   const isAppShellAsset =
     url.origin === self.location.origin &&
-    (url.pathname === '/' ||
-      url.pathname === '/index.html' ||
-      url.pathname === '/app.css' ||
-      url.pathname === '/app.js' ||
-      url.pathname === '/theme-init.js' ||
-      url.pathname === '/config.js');
+    (url.pathname.endsWith('/') ||
+      filePath === 'index.html' ||
+      filePath === 'app.css' ||
+      filePath === 'app.js' ||
+      filePath === 'theme-init.js' ||
+      filePath === 'config.js');
 
   // Prefer fresh scripts/styles/html to avoid stale UI/runtime errors.
   if (isAppShellAsset) {
@@ -48,7 +49,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
           return response;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
     );
     return;
   }
@@ -65,7 +66,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
           return response;
         })
-        .catch(() => caches.match('/index.html'));
+        .catch(() => caches.match('./index.html'));
     })
   );
 });
