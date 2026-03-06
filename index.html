@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Spotify Matcher</title>
+    <link rel="icon" type="image/png" sizes="1024x1024" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#111827" />
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('app_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      })();
+    </script>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h1>Local Mixer</h1>
+        <button data-view="library" class="nav-btn active">Library</button>
+        <button data-view="spotify" class="nav-btn">Spotify Liked</button>
+        <button data-view="playlists" class="nav-btn">Playlists</button>
+        <button data-view="settings" class="nav-btn">Settings</button>
+        <button data-view="queue" class="nav-btn">Queue</button>
+
+        <div class="playlists-block">
+          <div class="label">Playlists</div>
+          <div id="playlistSidebar"></div>
+          <button id="createPlaylistBtn">+ New Playlist</button>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="main-header">
+          <input id="searchInput" type="search" placeholder="Search tracks, artists, albums" />
+          <div class="actions">
+            <button id="densityToggleBtn">Compact</button>
+            <button id="importFolderBtn">Import Folder</button>
+            <button id="importFilesBtn">Import Files</button>
+            <input id="filesInput" type="file" accept="audio/*" multiple hidden />
+          </div>
+        </header>
+
+        <div id="status" class="status hidden"></div>
+        <div id="error" class="status error hidden"></div>
+
+        <section id="viewLibrary" class="view active"></section>
+        <section id="viewSpotify" class="view"></section>
+        <section id="viewPlaylists" class="view"></section>
+        <section id="viewSettings" class="view"></section>
+        <section id="viewQueue" class="view"></section>
+      </main>
+
+      <footer class="player-bar">
+        <div class="now-playing">
+          <div id="nowArt" class="now-art" aria-hidden="true"></div>
+          <div>
+            <div id="nowTitle" class="title">No track selected</div>
+            <div id="nowSub" class="sub">-</div>
+          </div>
+        </div>
+        <div class="player-controls">
+          <button id="shuffleBtn" class="player-btn" aria-label="Shuffle">S</button>
+          <button id="prevBtn" class="player-btn" aria-label="Previous track">Prev</button>
+          <button id="playPauseBtn" class="player-btn play-btn" aria-label="Play or pause">Play</button>
+          <button id="nextBtn" class="player-btn" aria-label="Next track">Next</button>
+          <button id="repeatBtn" class="player-btn" aria-label="Repeat">R</button>
+        </div>
+        <div class="timeline">
+          <span id="timeCurrent">0:00</span>
+          <input id="seekRange" type="range" min="0" max="1" step="0.1" value="0" />
+          <span id="timeDuration">0:00</span>
+        </div>
+        <div class="volume">
+          <span>Vol</span>
+          <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="0.9" />
+        </div>
+      </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
