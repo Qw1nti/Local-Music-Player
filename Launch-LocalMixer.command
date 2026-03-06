@@ -1,3 +1,4 @@
 #!/bin/zsh
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-exec "$SCRIPT_DIR/scripts/launch-localmixer-prod.sh"
+cd "$SCRIPT_DIR" || exit 1
+exec npm run prod:launch

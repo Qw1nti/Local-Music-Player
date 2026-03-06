@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 5173",
+    "dev": "node ./scripts/static-server.mjs --port 5173 --dir .",
     "build": "node ./scripts/build-static.mjs",
-    "preview": "python3 -m http.server 4173 -d dist",
-    "preview:local": "python3 -m http.server 4173 -d dist",
+    "preview": "node ./scripts/static-server.mjs --port 4173 --dir dist",
+    "preview:local": "node ./scripts/static-server.mjs --port 4173 --dir dist",
     "start": "npm run preview",
-    "clean": "rm -rf dist",
-    "prod:launch": "bash ./scripts/launch-localmixer-prod.sh",
-    "prod:stop": "bash ./scripts/stop-localmixer-prod.sh"
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prod:launch": "node ./scripts/launch-localmixer-prod.mjs",
+    "prod:stop": "node ./scripts/stop-localmixer-prod.mjs"
   },
   "dependencies": {},
   "devDependencies": {}
