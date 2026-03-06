@@ -4,6 +4,7 @@ const APP_SHELL = [
   '/index.html',
   '/app.css',
   '/app.js',
+  '/theme-init.js',
   '/config.js',
   '/manifest.webmanifest',
   '/favicon.png',
@@ -35,6 +36,7 @@ self.addEventListener('fetch', (event) => {
       url.pathname === '/index.html' ||
       url.pathname === '/app.css' ||
       url.pathname === '/app.js' ||
+      url.pathname === '/theme-init.js' ||
       url.pathname === '/config.js');
 
   // Prefer fresh scripts/styles/html to avoid stale UI/runtime errors.

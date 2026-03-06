@@ -4,17 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "dev": "python3 -m http.server 5173",
     "build": "node ./scripts/build-static.mjs",
-    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
-    "preview:local": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "preview": "python3 -m http.server 4173 -d dist",
+    "preview:local": "python3 -m http.server 4173 -d dist",
     "start": "npm run preview",
     "clean": "rm -rf dist",
     "prod:launch": "bash ./scripts/launch-localmixer-prod.sh",
     "prod:stop": "bash ./scripts/stop-localmixer-prod.sh"
   },
   "dependencies": {},
-  "devDependencies": {
-    "vite": "^5.4.10"
-  }
+  "devDependencies": {}
 }

@@ -7,6 +7,7 @@ const dist = resolve(root, 'dist');
 const filesToCopy = [
   'index.html',
   'app.js',
+  'theme-init.js',
   'app.css',
   'config.js',
   'config.example.js',
@@ -14,8 +15,7 @@ const filesToCopy = [
   'sw.js',
   'favicon.svg',
   'favicon.png',
-  'localmixer.ico',
-  'tracker.html'
+  'localmixer.ico'
 ];
 
 const dirsToCopy = ['icons'];

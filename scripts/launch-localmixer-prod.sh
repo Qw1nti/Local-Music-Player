@@ -9,11 +9,6 @@ LOG_FILE="/tmp/localmixer-preview.log"
 
 cd "$APP_DIR"
 
-if [ ! -d node_modules ]; then
-  echo "node_modules not found. Run 'npm install' first." >&2
-  exit 1
-fi
-
 # Always build so each launch reflects latest code.
 npm run build
 
@@ -27,14 +22,7 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-# Stop anything else listening on the target port.
-EXISTING_PORT_PIDS="$(lsof -ti tcp:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
-if [ -n "$EXISTING_PORT_PIDS" ]; then
-  echo "$EXISTING_PORT_PIDS" | xargs kill 2>/dev/null || true
-  sleep 0.4
-fi
-
-nohup npm run preview:local > "$LOG_FILE" 2>&1 &
+nohup python3 -m http.server "$PORT" -d "$APP_DIR/dist" > "$LOG_FILE" 2>&1 &
 PREVIEW_PID=$!
 echo "$PREVIEW_PID" > "$PID_FILE"
 

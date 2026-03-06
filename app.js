@@ -4,8 +4,17 @@
   const STORAGE_KEY = 'local_spotify_state_v1';
   const DIRECTORY_DB = 'local-spotify-directory-db';
   const PKCE_KEY = 'spotify_pkce_verifier';
+  const OAUTH_STATE_KEY = 'spotify_oauth_state';
+  const SPOTIFY_AUTH_SESSION_KEY = 'spotify_auth_session_v1';
   const THEME_STORAGE_KEY = 'app_theme';
   const CONCURRENT_METADATA_READS = 6;
+  const IMPORT_LIMITS = {
+    maxFiles: 5000,
+    maxFileBytes: 512 * 1024 * 1024,
+    maxTotalBytes: 8 * 1024 * 1024 * 1024,
+    maxDirectoryDepth: 20,
+    maxAlbumArtBytes: 8 * 1024 * 1024
+  };
   const THEMES = [
     'dark',
     'light',
@@ -125,6 +134,50 @@
       .replaceAll("'", '&#039;');
   }
 
+  function escapeAttr(value) {
+    return escapeHtml(String(value ?? ''));
+  }
+
+  function sanitizeImageUrl(value, options = {}) {
+    if (typeof value !== 'string') return '';
+    const raw = value.trim();
+    if (!raw) return '';
+
+    const { allowBlob = false, allowHttps = false } = options;
+    if (allowBlob && raw.startsWith('blob:')) return raw;
+
+    try {
+      const parsed = new URL(raw, window.location.href);
+      if (allowHttps && parsed.protocol === 'https:') return parsed.toString();
+    } catch {
+      return '';
+    }
+
+    return '';
+  }
+
+  function sanitizeSpotifyClientId(value) {
+    const trimmed = String(value || '').trim();
+    return /^[A-Za-z0-9_-]{8,128}$/.test(trimmed) ? trimmed : '';
+  }
+
+  function sanitizeRedirectUri(value) {
+    const fallback = `${window.location.origin}${window.location.pathname}`;
+    const raw = String(value || '').trim();
+    if (!raw) return fallback;
+
+    try {
+      const parsed = new URL(raw, window.location.href);
+      // For this purely client-side app, only allow same-origin callback targets.
+      if (parsed.origin === window.location.origin && (parsed.protocol === 'http:' || parsed.protocol === 'https:')) {
+        return parsed.toString();
+      }
+    } catch {
+      return fallback;
+    }
+    return fallback;
+  }
+
   function formatTime(sec) {
     if (!Number.isFinite(sec) || sec < 0) return '0:00';
     const m = Math.floor(sec / 60);
@@ -134,6 +187,18 @@
 
   function formatDurationMs(ms) {
     return formatTime(Math.round(ms / 1000));
+  }
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+    return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
   }
 
   function normalizeText(value) {
@@ -156,9 +221,8 @@
     const savedRedirect = localStorage.getItem('spotify_redirect_uri') || '';
 
     return {
-      spotifyClientId: fromWindow.spotifyClientId || savedClientId,
-      spotifyRedirectUri:
-        fromWindow.spotifyRedirectUri || savedRedirect || window.location.origin + window.location.pathname
+      spotifyClientId: sanitizeSpotifyClientId(fromWindow.spotifyClientId || savedClientId),
+      spotifyRedirectUri: sanitizeRedirectUri(fromWindow.spotifyRedirectUri || savedRedirect)
     };
   }
 
@@ -348,7 +412,7 @@
           cursor = descEnd + (enc === 1 || enc === 2 ? 2 : 1);
           if (cursor < frameData.length) {
             const imageBytes = frameData.subarray(cursor);
-            if (imageBytes.length > 0) {
+            if (imageBytes.length > 0 && imageBytes.length <= IMPORT_LIMITS.maxAlbumArtBytes) {
               const blob = new Blob([imageBytes], { type: mime });
               tags.albumArtUrl = URL.createObjectURL(blob);
               albumArtObjectUrls.add(tags.albumArtUrl);
@@ -425,13 +489,19 @@
     return tracks.filter(Boolean);
   }
 
-  async function walkDirectory(handle, out) {
+  async function walkDirectory(handle, out, depth = 0) {
+    if (depth > IMPORT_LIMITS.maxDirectoryDepth) {
+      throw new Error(`Directory nesting is too deep (>${IMPORT_LIMITS.maxDirectoryDepth} levels).`);
+    }
     for await (const entry of handle.values()) {
       if (entry.kind === 'file' && isAudioFile(entry.name)) {
+        if (out.length >= IMPORT_LIMITS.maxFiles) {
+          throw new Error(`Import exceeds file limit of ${IMPORT_LIMITS.maxFiles}.`);
+        }
         out.push(await entry.getFile());
       }
       if (entry.kind === 'directory') {
-        await walkDirectory(entry, out);
+        await walkDirectory(entry, out, depth + 1);
       }
     }
   }
@@ -451,6 +521,39 @@
 
   function trackIdFromFile(file) {
     return `local_${file.name}_${file.size}_${file.lastModified}`;
+  }
+
+  function enforceImportLimits(files, sourceLabel) {
+    if (files.length > IMPORT_LIMITS.maxFiles) {
+      throw new Error(`${sourceLabel} has ${files.length} files, above the limit of ${IMPORT_LIMITS.maxFiles}.`);
+    }
+
+    let totalBytes = 0;
+    const accepted = [];
+    let skippedTooLarge = 0;
+
+    for (const file of files) {
+      if (file.size > IMPORT_LIMITS.maxFileBytes) {
+        skippedTooLarge += 1;
+        continue;
+      }
+
+      totalBytes += file.size;
+      if (totalBytes > IMPORT_LIMITS.maxTotalBytes) {
+        throw new Error(
+          `${sourceLabel} exceeds total import size limit (${formatBytes(IMPORT_LIMITS.maxTotalBytes)}).`
+        );
+      }
+      accepted.push(file);
+    }
+
+    if (!accepted.length) {
+      throw new Error(
+        `No files passed import safety checks. Max file size is ${formatBytes(IMPORT_LIMITS.maxFileBytes)}.`
+      );
+    }
+
+    return { accepted, skippedTooLarge };
   }
 
   function uniquePlaylistName(baseName) {
@@ -495,15 +598,19 @@
       showError('No supported audio files selected.');
       return;
     }
+    const { accepted, skippedTooLarge } = enforceImportLimits(files, 'Selected files');
 
     clearMessages();
-    const tracks = await filesToTracks(files, 'files');
+    const tracks = await filesToTracks(accepted, 'files');
     tracks.forEach((track, index) => {
-      state.fileMap.set(track.id || trackIdFromFile(files[index]), files[index]);
+      state.fileMap.set(track.id || trackIdFromFile(accepted[index]), accepted[index]);
     });
     mergeLocalTracks(tracks);
     saveState();
-    showStatus(`Imported ${tracks.length} file${tracks.length === 1 ? '' : 's'}.`);
+    const skippedNote = skippedTooLarge
+      ? ` Skipped ${skippedTooLarge} oversized file${skippedTooLarge === 1 ? '' : 's'}.`
+      : '';
+    showStatus(`Imported ${tracks.length} file${tracks.length === 1 ? '' : 's'}.${skippedNote}`);
     render();
   }
 
@@ -526,10 +633,11 @@
       showError('No supported audio files found in the selected folder.');
       return;
     }
+    const { accepted, skippedTooLarge } = enforceImportLimits(files, 'Selected folder');
 
-    const tracks = await filesToTracks(files, 'directory');
+    const tracks = await filesToTracks(accepted, 'directory');
     tracks.forEach((track, index) => {
-      state.fileMap.set(track.id || trackIdFromFile(files[index]), files[index]);
+      state.fileMap.set(track.id || trackIdFromFile(accepted[index]), accepted[index]);
     });
     mergeLocalTracks(tracks);
     const createdPlaylist = createPlaylistFromFolderImport(tracks, handle.name || 'Imported Folder');
@@ -539,7 +647,10 @@
     });
     saveState();
     const playlistNote = createdPlaylist ? ` and created playlist "${createdPlaylist.name}"` : '';
-    showStatus(`Imported ${tracks.length} track${tracks.length === 1 ? '' : 's'} from ${handle.name}${playlistNote}.`);
+    const skippedNote = skippedTooLarge
+      ? ` Skipped ${skippedTooLarge} oversized file${skippedTooLarge === 1 ? '' : 's'}.`
+      : '';
+    showStatus(`Imported ${tracks.length} track${tracks.length === 1 ? '' : 's'} from ${handle.name}${playlistNote}.${skippedNote}`);
     render();
   }
 
@@ -562,21 +673,25 @@
     clearMessages();
     const files = [];
     await walkDirectory(handle, files);
-    const tracks = await filesToTracks(files, 'directory');
+    const { accepted, skippedTooLarge } = enforceImportLimits(files, 'Saved folder');
+    const tracks = await filesToTracks(accepted, 'directory');
 
     const previousDirectoryIds = new Set(
       state.localTracks.filter((track) => track.source === 'directory').map((track) => track.id)
     );
     previousDirectoryIds.forEach((id) => state.fileMap.delete(id));
     tracks.forEach((track, index) => {
-      state.fileMap.set(track.id || trackIdFromFile(files[index]), files[index]);
+      state.fileMap.set(track.id || trackIdFromFile(accepted[index]), accepted[index]);
     });
     state.localTracks = state.localTracks.filter((track) => track.source !== 'directory');
     mergeLocalTracks(tracks);
 
     state.linkedDirectoryName = handle.name || state.linkedDirectoryName;
     saveState();
-    showStatus(`Reconnected ${tracks.length} track${tracks.length === 1 ? '' : 's'} from ${state.linkedDirectoryName}.`);
+    const skippedNote = skippedTooLarge
+      ? ` Skipped ${skippedTooLarge} oversized file${skippedTooLarge === 1 ? '' : 's'}.`
+      : '';
+    showStatus(`Reconnected ${tracks.length} track${tracks.length === 1 ? '' : 's'} from ${state.linkedDirectoryName}.${skippedNote}`);
     render();
   }
 
@@ -615,6 +730,30 @@
     return handle;
   }
 
+  function saveSpotifyAuthSession() {
+    try {
+      if (state.spotifyAuth) {
+        sessionStorage.setItem(SPOTIFY_AUTH_SESSION_KEY, JSON.stringify(state.spotifyAuth));
+      } else {
+        sessionStorage.removeItem(SPOTIFY_AUTH_SESSION_KEY);
+      }
+    } catch {
+      // Ignore storage write failures.
+    }
+  }
+
+  function loadSpotifyAuthSession() {
+    try {
+      const raw = sessionStorage.getItem(SPOTIFY_AUTH_SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
   function saveState() {
     const persisted = {
       localTracks: state.localTracks.map((track) => ({
@@ -624,7 +763,7 @@
       spotifyTracks: state.spotifyTracks,
       playlists: state.playlists,
       matchOverrides: state.matchOverrides,
-      spotifyAuth: state.spotifyAuth,
+      spotifyAuth: null,
       linkedDirectoryName: state.linkedDirectoryName,
       activePlaylistId: state.activePlaylistId,
       denseMode: state.denseMode,
@@ -642,6 +781,7 @@
       spotifyCompactRows: state.spotifyCompactRows
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+    saveSpotifyAuthSession();
   }
 
   function loadState() {
@@ -656,7 +796,7 @@
       state.spotifyTracks = parsed.spotifyTracks || [];
       state.playlists = parsed.playlists || [];
       state.matchOverrides = parsed.matchOverrides || {};
-      state.spotifyAuth = parsed.spotifyAuth || null;
+      state.spotifyAuth = loadSpotifyAuthSession();
       state.linkedDirectoryName = parsed.linkedDirectoryName || null;
       state.activePlaylistId = parsed.activePlaylistId || null;
       state.denseMode = Boolean(parsed.denseMode);
@@ -681,6 +821,8 @@
   function clearState() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PKCE_KEY);
+    localStorage.removeItem(OAUTH_STATE_KEY);
+    sessionStorage.removeItem(SPOTIFY_AUTH_SESSION_KEY);
     state.localTracks = [];
     state.spotifyTracks = [];
     state.playlists = [];
@@ -807,7 +949,9 @@
     }
 
     const verifier = randomString(96);
+    const oauthState = randomString(24);
     localStorage.setItem(PKCE_KEY, verifier);
+    localStorage.setItem(OAUTH_STATE_KEY, oauthState);
     const challenge = b64Url(await sha256(verifier));
 
     const params = new URLSearchParams({
@@ -815,6 +959,7 @@
       client_id: config.spotifyClientId,
       redirect_uri: config.spotifyRedirectUri,
       scope: SPOTIFY_SCOPES.join(' '),
+      state: oauthState,
       code_challenge_method: 'S256',
       code_challenge: challenge
     });
@@ -1325,6 +1470,21 @@
     setQueueAndPlay(state.queue, prev.id);
   }
 
+  function applyAlbumArtBackgrounds(container) {
+    if (!container) return;
+    container.querySelectorAll('[data-album-art]').forEach((node) => {
+      const url = sanitizeImageUrl(node.getAttribute('data-album-art') || '', {
+        allowBlob: true,
+        allowHttps: true
+      });
+      if (url) {
+        node.style.backgroundImage = `url("${url}")`;
+      } else {
+        node.style.backgroundImage = '';
+      }
+    });
+  }
+
   function renderLibrary() {
     const tracks = filterLocalTracks();
     normalizeTrackSelection();
@@ -1354,7 +1514,7 @@
       for (const t of tracks) counts.set(t.artist, (counts.get(t.artist) || 0) + 1);
       const rows = [...counts.entries()]
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([artist, count], i) => `<tr style="--row:${i}"><td>${escapeHtml(artist)}</td><td>${count}</td><td><button class="chip-btn" data-play-artist="${escapeHtml(artist)}">Play Artist</button></td></tr>`)
+        .map(([artist, count], i) => `<tr style="--row:${i}"><td>${escapeHtml(artist)}</td><td>${count}</td><td><button class="chip-btn" data-play-artist="${escapeAttr(artist)}">Play Artist</button></td></tr>`)
         .join('');
 
       els.views.library.innerHTML = `
@@ -1409,20 +1569,22 @@
     const rows = tracks
       .map((track, index) => {
         const checked = selectedSet.has(track.id) ? 'checked' : '';
+        const safeAlbumArt = sanitizeImageUrl(track.albumArtUrl, { allowBlob: true, allowHttps: true });
+        const trackIdAttr = escapeAttr(track.id);
         return `
         <tr style="--row:${index}">
-          <td><input type="checkbox" data-track-select="${track.id}" ${checked} aria-label="Select ${escapeHtml(track.title)}" /></td>
-          <td><div class="art-thumb ${track.albumArtUrl ? '' : 'placeholder'}" ${track.albumArtUrl ? `style="background-image:url('${track.albumArtUrl}')"` : ''}></div></td>
+          <td><input type="checkbox" data-track-select="${trackIdAttr}" ${checked} aria-label="Select ${escapeAttr(track.title)}" /></td>
+          <td><div class="art-thumb ${safeAlbumArt ? '' : 'placeholder'}" data-album-art="${escapeAttr(safeAlbumArt)}"></div></td>
           <td>${escapeHtml(track.title)}</td>
           <td>${escapeHtml(track.artist)}</td>
           <td>${escapeHtml(track.album)}</td>
           <td>${formatTime(track.durationSec)}</td>
           <td>
-            <button class="chip-btn" data-play-track="${track.id}">Play</button>
-            <button class="chip-btn quiet" data-play-next="${track.id}">Play Next</button>
-            <button class="chip-btn quiet" data-add-queue="${track.id}">Add Queue</button>
-            <button class="chip-btn quiet" data-add-local="${track.id}">Add Playlist</button>
-            <button class="chip-btn quiet" data-delete-track="${track.id}">Delete</button>
+            <button class="chip-btn" data-play-track="${trackIdAttr}">Play</button>
+            <button class="chip-btn quiet" data-play-next="${trackIdAttr}">Play Next</button>
+            <button class="chip-btn quiet" data-add-queue="${trackIdAttr}">Add Queue</button>
+            <button class="chip-btn quiet" data-add-local="${trackIdAttr}">Add Playlist</button>
+            <button class="chip-btn quiet" data-delete-track="${trackIdAttr}">Delete</button>
           </td>
         </tr>
       `;
@@ -1449,6 +1611,7 @@
         <tbody>${rows}</tbody>
       </table>
     `;
+    applyAlbumArtBackgrounds(els.views.library);
   }
 
   function renderSpotify() {
@@ -1464,12 +1627,15 @@
       .map((track, index) => {
         const match = getMatch(track.id);
         const matchedLocal = match.localTrackId ? state.localTracks.find((t) => t.id === match.localTrackId) : null;
+        const safeSpotifyArt = sanitizeImageUrl(track.albumArtUrl, { allowHttps: true });
+        const spotifyIdAttr = escapeAttr(track.id);
+        const matchedLocalIdAttr = matchedLocal ? escapeAttr(matchedLocal.id) : '';
 
         return `
           <tr style="--row:${index}" class="spotify-row">
             <td>
               <div class="spotify-cell">
-                ${track.albumArtUrl ? `<img src="${track.albumArtUrl}" alt="cover" />` : '<div class="art-thumb placeholder"></div>'}
+                ${safeSpotifyArt ? `<img src="${escapeAttr(safeSpotifyArt)}" alt="cover" />` : '<div class="art-thumb placeholder"></div>'}
                 <div class="spotify-main">
                   <div class="spotify-title">${escapeHtml(track.name)}</div>
                   <div class="spotify-meta">${escapeHtml(track.artists.join(', '))} · ${escapeHtml(track.album)}</div>
@@ -1479,8 +1645,8 @@
             </td>
             <td>${formatDurationMs(track.durationMs)}</td>
             <td class="spotify-actions">
-              <button class="chip-btn quiet" data-add-spotify-ref="${track.id}">Add Ref</button>
-              ${matchedLocal ? `<button class="chip-btn quiet" data-add-queue="${matchedLocal.id}">Add Queue</button>` : ''}
+              <button class="chip-btn quiet" data-add-spotify-ref="${spotifyIdAttr}">Add Ref</button>
+              ${matchedLocal ? `<button class="chip-btn quiet" data-add-queue="${matchedLocalIdAttr}">Add Queue</button>` : ''}
             </td>
           </tr>
         `;
@@ -1535,9 +1701,9 @@
           <td>${escapeHtml(track.album)}</td>
           <td>${formatTime(track.durationSec)}</td>
           <td>
-            <button class="chip-btn" data-play-playlist-track="${track.id}">Play</button>
-            <button class="chip-btn quiet" data-play-next="${track.id}">Play Next</button>
-            <button class="chip-btn quiet" data-add-queue="${track.id}">Add Queue</button>
+            <button class="chip-btn" data-play-playlist-track="${escapeAttr(track.id)}">Play</button>
+            <button class="chip-btn quiet" data-play-next="${escapeAttr(track.id)}">Play Next</button>
+            <button class="chip-btn quiet" data-add-queue="${escapeAttr(track.id)}">Add Queue</button>
           </td>
         </tr>
       `)
@@ -1569,7 +1735,7 @@
             <td>${escapeHtml(name)}</td>
             <td>${escapeHtml(status)}</td>
             <td>
-              <button class="chip-btn quiet" data-remove-playlist-item="${item.id}">Remove</button>
+              <button class="chip-btn quiet" data-remove-playlist-item="${escapeAttr(item.id)}">Remove</button>
               ${playlist.smart ? '' : `<button class="chip-btn quiet" data-playlist-up="${index}">Up</button><button class="chip-btn quiet" data-playlist-down="${index}">Down</button>`}
             </td>
           </tr>
@@ -1624,18 +1790,18 @@
       return `
         <button
           class="theme-swatch ${active}"
-          data-theme-pick="${theme}"
-          data-theme-preview="${theme}"
-          title="${label}"
-          aria-label="Switch to ${label} theme"
+          data-theme-pick="${escapeAttr(theme)}"
+          data-theme-preview="${escapeAttr(theme)}"
+          title="${escapeAttr(label)}"
+          aria-label="Switch to ${escapeAttr(label)} theme"
         >${label}</button>
       `;
     }).join('');
 
     const generalPanel = `
       <div class="inline-group">
-        <label>Spotify Client ID <input id="spotifyClientIdInput" value="${escapeHtml(config.spotifyClientId || '')}" /></label>
-        <label>Redirect URI <input id="spotifyRedirectInput" value="${escapeHtml(config.spotifyRedirectUri || '')}" /></label>
+        <label>Spotify Client ID <input id="spotifyClientIdInput" value="${escapeAttr(config.spotifyClientId || '')}" /></label>
+        <label>Redirect URI <input id="spotifyRedirectInput" value="${escapeAttr(config.spotifyRedirectUri || '')}" /></label>
       </div>
       <div class="inline-group">
         <button id="saveSpotifyConfigBtn">Save Spotify Config</button>
@@ -1723,17 +1889,18 @@
     const smartHtml = smart
       .map((p) => {
         const active = p.id === state.activePlaylistId;
-        return `<button class="playlist-side-item ${active ? 'active' : ''}" data-pick-playlist="${p.id}">${escapeHtml(p.name)}</button>`;
+        return `<button class="playlist-side-item ${active ? 'active' : ''}" data-pick-playlist="${escapeAttr(p.id)}">${escapeHtml(p.name)}</button>`;
       })
       .join('');
 
     const userHtml = state.playlists
       .map((p) => {
         const active = p.id === state.activePlaylistId;
+        const playlistIdAttr = escapeAttr(p.id);
         return `
           <div class="playlist-side-row ${active ? 'active' : ''}">
-            <button class="playlist-side-item ${active ? 'active' : ''}" data-pick-playlist="${p.id}">${escapeHtml(p.name)}</button>
-            <button class="playlist-delete-btn" data-delete-playlist="${p.id}" title="Delete playlist" aria-label="Delete ${escapeHtml(p.name)}">x</button>
+            <button class="playlist-side-item ${active ? 'active' : ''}" data-pick-playlist="${playlistIdAttr}">${escapeHtml(p.name)}</button>
+            <button class="playlist-delete-btn" data-delete-playlist="${playlistIdAttr}" title="Delete playlist" aria-label="Delete ${escapeAttr(p.name)}">x</button>
           </div>
         `;
       })
@@ -1745,8 +1912,9 @@
   function updateMediaSession(track) {
     if (!('mediaSession' in navigator)) return;
 
+    const safeArt = sanitizeImageUrl(track?.albumArtUrl, { allowBlob: true, allowHttps: true });
     const artwork = track
-      ? [{ src: track.albumArtUrl || '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }]
+      ? [{ src: safeArt || '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }]
       : [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }];
 
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -1798,8 +1966,9 @@
     els.playPauseBtn.disabled = !hasTrack;
     els.seekRange.disabled = !hasTrack;
 
-    if (track?.albumArtUrl) {
-      els.nowArt.style.backgroundImage = `url('${track.albumArtUrl}')`;
+    const safeNowArt = sanitizeImageUrl(track?.albumArtUrl, { allowBlob: true, allowHttps: true });
+    if (safeNowArt) {
+      els.nowArt.style.backgroundImage = `url("${safeNowArt}")`;
       els.nowArt.classList.remove('placeholder');
     } else {
       els.nowArt.style.backgroundImage = '';
@@ -1928,6 +2097,8 @@
     const url = new URL(window.location.href);
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
+    const callbackState = url.searchParams.get('state');
+    const expectedState = localStorage.getItem(OAUTH_STATE_KEY);
 
     if (!code && !error) return Promise.resolve();
 
@@ -1937,7 +2108,14 @@
     history.replaceState({}, document.title, url.toString());
 
     if (error) {
+      localStorage.removeItem(OAUTH_STATE_KEY);
       showError(`Spotify auth error: ${error}`);
+      return Promise.resolve();
+    }
+
+    if (!expectedState || !callbackState || callbackState !== expectedState) {
+      localStorage.removeItem(OAUTH_STATE_KEY);
+      showError('Spotify auth state mismatch. Please try login again.');
       return Promise.resolve();
     }
 
@@ -1945,6 +2123,9 @@
       .then(() => fetchSpotifyProfile())
       .then(() => {
         showStatus('Spotify login successful.');
+      })
+      .finally(() => {
+        localStorage.removeItem(OAUTH_STATE_KEY);
       })
       .catch((err) => showError(err.message || 'Spotify login failed.'));
   }
@@ -2262,8 +2443,12 @@
       if (target.id === 'saveSpotifyConfigBtn') {
         const clientInput = document.getElementById('spotifyClientIdInput');
         const redirectInput = document.getElementById('spotifyRedirectInput');
-        localStorage.setItem('spotify_client_id', clientInput.value.trim());
-        localStorage.setItem('spotify_redirect_uri', redirectInput.value.trim());
+        if (!(clientInput instanceof HTMLInputElement) || !(redirectInput instanceof HTMLInputElement)) {
+          showError('Spotify config inputs are missing.');
+          return;
+        }
+        localStorage.setItem('spotify_client_id', sanitizeSpotifyClientId(clientInput.value));
+        localStorage.setItem('spotify_redirect_uri', sanitizeRedirectUri(redirectInput.value));
         showStatus('Spotify config saved.');
         render();
         return;
