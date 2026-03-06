@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 
 const managerPidFile = resolve(tmpdir(), 'localmixer-session.pid');
 const serverPidFile = resolve(tmpdir(), 'localmixer-preview.pid');
+const oneClickPidFile = resolve(tmpdir(), 'localmixer-oneclick-preview.pid');
 
 function stopFromPidFile(file) {
   if (!existsSync(file)) return false;
@@ -26,7 +27,8 @@ function stopFromPidFile(file) {
 function main() {
   const managerStopped = stopFromPidFile(managerPidFile);
   const serverStopped = stopFromPidFile(serverPidFile);
-  if (!managerStopped && !serverStopped) {
+  const oneClickStopped = stopFromPidFile(oneClickPidFile);
+  if (!managerStopped && !serverStopped && !oneClickStopped) {
     console.log('No managed Local Mixer app session is running.');
     return;
   }

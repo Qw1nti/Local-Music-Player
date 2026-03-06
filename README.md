@@ -43,7 +43,33 @@ node -v
 npm -v
 ```
 
-## 3. Run the App
+## Running the App (One-Click Launch)
+
+Use these files from the project root:
+
+### Windows
+1. Double-click `launch.bat`.
+2. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+
+### macOS
+1. Double-click `launch.command`.
+2. If blocked the first time: right-click `launch.command` > `Open`.
+3. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+
+### Linux
+1. Run once to allow execution:
+```bash
+chmod +x launch.sh
+```
+2. Double-click `launch.sh` (or run `./launch.sh`).
+3. It checks Node/npm, installs dependencies if needed, builds, starts server, and opens the app.
+
+Stop the managed server anytime:
+```bash
+npm run prod:stop
+```
+
+## 3. Run the App (Terminal)
 
 ### Option A: Standard browser run (all OS)
 Development server:
@@ -59,7 +85,7 @@ npm run preview
 ```
 Open `http://127.0.0.1:4173`
 
-### Option B: App-mode launcher (recommended)
+### Option B: App-mode launcher (managed Chrome window)
 Use this if you want it to behave like a desktop app window.
 
 Windows/macOS/Linux:
