@@ -74,7 +74,7 @@ export function bindPreferencesEvents({
       return;
     }
 
-    const themePick = target.getAttribute('data-theme-pick');
+    const themePick = target.closest('[data-theme-pick]')?.getAttribute('data-theme-pick');
     if (themePick) {
       void settingsManager
         .set('themes.activeThemeId', themePick)
