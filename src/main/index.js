@@ -8,23 +8,44 @@
  */
 import { app, BrowserWindow, dialog } from 'electron';
 import { createMainWindow } from './windows/main-window.js';
-import { registerLibraryIpc } from './ipc/library-ipc.js';
+import { registerLibraryIpc, resetLibraryIpcState } from './ipc/library-ipc.js';
 import { registerSettingsIpc, initSettingsCache } from './ipc/settings-ipc.js';
 import { registerAppIpc } from './ipc/app-ipc.js';
 import { setAppMenu } from './app-menu.js';
 import { logError, logInfo } from './services/diagnostics-log-service.js';
 
-async function bootstrap() {
-  let window;
+let mainWindow = null;
+let ipcRegistered = false;
 
+function attachMainWindow(window) {
+  mainWindow = window;
+  mainWindow.on('closed', () => {
+    resetLibraryIpcState();
+    if (mainWindow === window) {
+      mainWindow = null;
+    }
+  });
+}
+
+async function bootstrap() {
   try {
     await logInfo('Main bootstrap start');
     await initSettingsCache();
-    registerSettingsIpc();
-    registerAppIpc();
+    if (!ipcRegistered) {
+      registerSettingsIpc();
+      registerAppIpc();
+      registerLibraryIpc(() => mainWindow);
+      ipcRegistered = true;
+    }
     setAppMenu();
 
-    window = createMainWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.focus();
+      return;
+    }
+
+    const window = createMainWindow();
+    attachMainWindow(window);
     await logInfo('Main window created');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create main window.';
@@ -33,8 +54,6 @@ async function bootstrap() {
     app.quit();
     return;
   }
-
-  registerLibraryIpc(window);
 }
 
 app.whenReady().then(bootstrap);
@@ -52,5 +71,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) bootstrap();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    void bootstrap();
+  }
 });

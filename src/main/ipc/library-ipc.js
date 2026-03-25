@@ -42,18 +42,29 @@ function parseScanPayload(payload) {
 }
 
 const scanControllers = new Map();
+let windowGetter = () => null;
+let handlersRegistered = false;
 
-export function registerLibraryIpc(window) {
-  ipcMain.handle(IPC_CHANNELS.pickFiles, () => pickAudioFiles(window));
-  ipcMain.handle(IPC_CHANNELS.pickFolder, () => pickAudioFolder(window));
+function getCurrentWindow() {
+  return typeof windowGetter === 'function' ? windowGetter() : null;
+}
+
+export function registerLibraryIpc(getWindow) {
+  windowGetter = typeof getWindow === 'function' ? getWindow : () => getWindow;
+  if (handlersRegistered) return;
+  handlersRegistered = true;
+
+  ipcMain.handle(IPC_CHANNELS.pickFiles, () => pickAudioFiles(getCurrentWindow()));
+  ipcMain.handle(IPC_CHANNELS.pickFolder, () => pickAudioFolder(getCurrentWindow()));
   ipcMain.handle(IPC_CHANNELS.scanPaths, (_event, payload) => {
     const parsed = parseScanPayload(payload);
     const scanId = String(parsed.options.scanId || `scan-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`);
     const controller = new AbortController();
     scanControllers.set(scanId, controller);
+    const window = getCurrentWindow();
 
     const progress = (progressPayload) => {
-      window.webContents.send(IPC_EVENTS.libraryScanProgress, {
+      window?.webContents.send(IPC_EVENTS.libraryScanProgress, {
         scanId,
         ...progressPayload
       });
@@ -77,10 +88,10 @@ export function registerLibraryIpc(window) {
   ipcMain.handle(IPC_CHANNELS.loadState, () => loadLibraryState());
   ipcMain.handle(IPC_CHANNELS.saveState, (_event, state) => saveLibraryState(state));
   ipcMain.handle(IPC_CHANNELS.clearState, () => clearLibraryState());
-  ipcMain.handle(IPC_CHANNELS.watchFolder, (_event, folderPath) => watchLibraryFolder(window, String(folderPath || '')));
+  ipcMain.handle(IPC_CHANNELS.watchFolder, (_event, folderPath) => watchLibraryFolder(getCurrentWindow(), String(folderPath || '')));
   ipcMain.handle(IPC_CHANNELS.unwatchFolder, (_event, folderPath) => unwatchLibraryFolder(String(folderPath || '')));
-  ipcMain.handle(IPC_CHANNELS.exportData, (_event, payload) => exportPlayerData(window, payload));
-  ipcMain.handle(IPC_CHANNELS.importData, () => importPlayerData(window));
+  ipcMain.handle(IPC_CHANNELS.exportData, (_event, payload) => exportPlayerData(getCurrentWindow(), payload));
+  ipcMain.handle(IPC_CHANNELS.importData, () => importPlayerData(getCurrentWindow()));
   ipcMain.handle(IPC_CHANNELS.diagnosticsLogs, (_event, limit) => readRecentLogs(Number(limit || 200)));
   ipcMain.handle(IPC_CHANNELS.diagnosticsClear, () => clearLogs());
   ipcMain.handle(IPC_CHANNELS.diagnosticsRecordRendererError, (_event, payload) => {
@@ -88,12 +99,12 @@ export function registerLibraryIpc(window) {
     const context = payload && typeof payload === 'object' ? payload : {};
     return logError(message, null, context);
   });
+}
 
-  window.on('closed', () => {
-    for (const controller of scanControllers.values()) {
-      controller.abort();
-    }
-    scanControllers.clear();
-    clearLibraryWatches();
-  });
+export function resetLibraryIpcState() {
+  for (const controller of scanControllers.values()) {
+    controller.abort();
+  }
+  scanControllers.clear();
+  clearLibraryWatches();
 }

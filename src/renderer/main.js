@@ -89,6 +89,12 @@ let issuesModalState = {
   title: '',
   issues: []
 };
+let playlistNameModalState = {
+  open: false,
+  defaultName: '',
+  draft: '',
+  resolve: null
+};
 let pendingQueueFocusIndex = null;
 
 const playerDom = {
@@ -217,6 +223,46 @@ function openIssuesModal(title, issues = []) {
 function closeIssuesModal() {
   issuesModalState = { open: false, title: '', issues: [] };
   render();
+}
+
+function openPlaylistNameModal(defaultName) {
+  if (playlistNameModalState.open) {
+    return Promise.resolve(null);
+  }
+
+  const nextDefaultName = String(defaultName || 'New Playlist').trim() || 'New Playlist';
+  return new Promise((resolve) => {
+    playlistNameModalState = {
+      open: true,
+      defaultName: nextDefaultName,
+      draft: nextDefaultName,
+      resolve
+    };
+    render();
+  });
+}
+
+function closePlaylistNameModal(result = null) {
+  if (!playlistNameModalState.open) return;
+  const resolver = playlistNameModalState.resolve;
+  playlistNameModalState = {
+    open: false,
+    defaultName: '',
+    draft: '',
+    resolve: null
+  };
+  render();
+  resolver?.(result);
+}
+
+function submitPlaylistNameModal(nextValue) {
+  const trimmed = String(nextValue || '').trim();
+  if (!trimmed) {
+    setError('Playlist name cannot be empty.');
+    render();
+    return;
+  }
+  closePlaylistNameModal(trimmed);
 }
 
 function clearImportSummary() {
@@ -834,7 +880,14 @@ function bindEvents() {
     }
 
     if (target.id === 'closeIssuesModalBtn' || target.id === 'appModal') {
+      if (duplicateModalState.open) resolveDuplicateModalChoice('cancel');
       if (issuesModalState.open) closeIssuesModal();
+      if (playlistNameModalState.open) closePlaylistNameModal();
+      return;
+    }
+
+    if (target.id === 'playlistNameCancelBtn') {
+      closePlaylistNameModal();
       return;
     }
 
@@ -872,8 +925,10 @@ function bindEvents() {
     }
 
     if (target.id === 'createPlaylistBtn') {
-      const nextName = window.prompt('Playlist name', `Playlist ${store.getState().playlists.length + 1}`);
-      if (nextName) store.createPlaylist(nextName);
+      const nextName = `Playlist ${store.getState().playlists.length + 1}`;
+      void openPlaylistNameModal(nextName).then((name) => {
+        if (name) store.createPlaylist(name);
+      });
       return;
     }
 
@@ -905,8 +960,10 @@ function bindEvents() {
     }
 
     if (action === 'onboard-create-playlist') {
-      const nextName = window.prompt('Playlist name', `Playlist ${store.getState().playlists.length + 1}`);
-      if (nextName) store.createPlaylist(nextName);
+      const nextName = `Playlist ${store.getState().playlists.length + 1}`;
+      void openPlaylistNameModal(nextName).then((name) => {
+        if (name) store.createPlaylist(name);
+      });
       return;
     }
 
@@ -1095,6 +1152,26 @@ function bindEvents() {
     }
   });
 
+  root.addEventListener('submit', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLFormElement)) return;
+    if (target.id !== 'playlistNameForm') return;
+    event.preventDefault();
+    const input = target.querySelector('#playlistNameInput');
+    const nextValue = input instanceof HTMLInputElement ? input.value : playlistNameModalState.draft;
+    submitPlaylistNameModal(nextValue);
+  });
+
+  root.addEventListener('input', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.id !== 'playlistNameInput' || !playlistNameModalState.open) return;
+    playlistNameModalState = {
+      ...playlistNameModalState,
+      draft: target.value
+    };
+  });
+
   root.addEventListener('input', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
@@ -1234,11 +1311,12 @@ function bindEvents() {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (duplicateModalState.open || issuesModalState.open) {
+    if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open) {
       if (event.key === 'Escape') {
         event.preventDefault();
         if (duplicateModalState.open) resolveDuplicateModalChoice('cancel');
         if (issuesModalState.open) closeIssuesModal();
+        if (playlistNameModalState.open) closePlaylistNameModal();
         return;
       }
       if (event.key === 'Tab') {
@@ -1542,6 +1620,31 @@ function render() {
         </div>
       </div>
     `;
+  } else if (playlistNameModalState.open) {
+    modalHost.classList.remove('hidden');
+    modalHost.setAttribute('aria-hidden', 'false');
+    modalHost.innerHTML = `
+      <form class="modal-card" id="playlistNameForm" role="dialog" aria-modal="true" aria-label="Create playlist">
+        <h3>Create Playlist</h3>
+        <div class="modal-copy">Give the new playlist a name before we create it.</div>
+        <label class="modal-field">
+          <span>Name</span>
+          <input
+            id="playlistNameInput"
+            type="text"
+            name="playlistName"
+            value="${escapeHtml(playlistNameModalState.draft)}"
+            autocomplete="off"
+            maxlength="120"
+            spellcheck="false"
+          />
+        </label>
+        <div class="modal-actions">
+          <button id="playlistNameCancelBtn" type="button">Cancel</button>
+          <button id="playlistNameSubmitBtn" type="submit">Create</button>
+        </div>
+      </form>
+    `;
   } else {
     modalHost.classList.add('hidden');
     modalHost.setAttribute('aria-hidden', 'true');
@@ -1557,10 +1660,15 @@ function render() {
     }
   }
 
-  if (duplicateModalState.open || issuesModalState.open) {
-    const modalPrimary = modalHost.querySelector('button');
+  if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open) {
+    const modalPrimary = playlistNameModalState.open
+      ? modalHost.querySelector('#playlistNameInput')
+      : modalHost.querySelector('button');
     if (modalPrimary instanceof HTMLElement && !modalHost.contains(document.activeElement)) {
       modalPrimary.focus();
+      if (modalPrimary instanceof HTMLInputElement) {
+        modalPrimary.select();
+      }
     }
   }
 

@@ -1163,6 +1163,27 @@ input[type='range'] {
   margin: 0;
 }
 
+.modal-copy {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modal-field {
+  display: grid;
+  gap: 8px;
+}
+
+.modal-field span {
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.modal-field input {
+  width: 100%;
+}
+
 .modal-actions {
   display: flex;
   gap: 8px;
