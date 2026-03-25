@@ -33,7 +33,9 @@ export function bindPreferencesEvents({
   setSearchQuery,
   onRender,
   onInfo,
-  onError
+  onError,
+  openConfirmModal,
+  closeConfirmModal
 }) {
   const pendingSettingTimers = new Map();
 
@@ -81,22 +83,48 @@ export function bindPreferencesEvents({
     }
 
     if (target.id === 'resetSettingsBtn') {
-      if (!window.confirm('Reset all settings to defaults?')) return;
-      void settingsManager
-        .reset()
-        .then(() => onInfo('Settings reset to defaults.'))
-        .catch((error) => onError(error instanceof Error ? error.message : 'Failed to reset settings.'));
+      void openConfirmModal?.({
+        title: 'Reset Settings',
+        message: 'Reset all settings to defaults? This will restore the built-in configuration.',
+        confirmLabel: 'Reset',
+        cancelLabel: 'Keep Settings',
+        danger: true
+      }).then((confirmed) => {
+        if (!confirmed) return;
+        void settingsManager
+          .reset()
+          .then(() => onInfo('Settings reset to defaults.'))
+          .catch((error) => onError(error instanceof Error ? error.message : 'Failed to reset settings.'));
+      });
+      return;
+    }
+
+    if (target.id === 'prefsConfirmCancelBtn' || target.id === 'prefsModal') {
+      closeConfirmModal?.(false);
+      return;
+    }
+
+    if (target.id === 'prefsConfirmActionBtn') {
+      closeConfirmModal?.(true);
       return;
     }
 
     if (target.id === 'clearLibraryBtn') {
-      if (!window.confirm('Clear saved library state? You will need to re-import your music.')) return;
-      void api
-        .clearLibraryState()
-        .then(() => {
-          onInfo('Library cache cleared. Restart the app to re-import.');
-        })
-        .catch((error) => onError(error instanceof Error ? error.message : 'Failed to clear library cache.'));
+      void openConfirmModal?.({
+        title: 'Clear Library Cache',
+        message: 'Clear saved library state? You will need to re-import your music.',
+        confirmLabel: 'Clear Cache',
+        cancelLabel: 'Keep Cache',
+        danger: true
+      }).then((confirmed) => {
+        if (!confirmed) return;
+        void api
+          .clearLibraryState()
+          .then(() => {
+            onInfo('Library cache cleared. Restart the app to re-import.');
+          })
+          .catch((error) => onError(error instanceof Error ? error.message : 'Failed to clear library cache.'));
+      });
       return;
     }
 
@@ -205,6 +233,36 @@ export function bindPreferencesEvents({
   };
 
   const handleKeydown = (event) => {
+    const modalOpen = Boolean(document.getElementById('prefsModal') && !document.getElementById('prefsModal').classList.contains('hidden'));
+    if (modalOpen) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeConfirmModal?.(false);
+        return;
+      }
+      if (event.key === 'Tab') {
+        const modal = document.querySelector('#prefsModal .modal-card');
+        if (!modal) return;
+        const focusables = [...modal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+          (el) => el instanceof HTMLElement && !el.hasAttribute('disabled')
+        );
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+          return;
+        }
+        if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
+    }
+
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
       event.preventDefault();
       document.getElementById('prefsSearchInput')?.focus();

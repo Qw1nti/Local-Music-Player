@@ -736,6 +736,12 @@ input[type='range'] {
   font-size: 0.84rem;
 }
 
+.modal-actions .destructive {
+  border-color: rgba(239, 122, 122, 0.3);
+  color: #ffd0d0;
+  background: rgba(98, 30, 30, 0.28);
+}
+
 .bulk-actions {
   display: flex;
   align-items: center;
@@ -1157,6 +1163,10 @@ input[type='range'] {
   display: grid;
   gap: 12px;
   box-shadow: var(--shadow-lg);
+}
+
+.modal-card.is-danger {
+  border-color: rgba(239, 122, 122, 0.34);
 }
 
 .modal-card h3 {

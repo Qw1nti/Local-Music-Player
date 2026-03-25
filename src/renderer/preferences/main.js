@@ -31,6 +31,15 @@ let diagnosticsText = '';
 let unbindEvents = null;
 let renderQueued = false;
 let searchQuery = '';
+let confirmModalState = {
+  open: false,
+  title: '',
+  message: '',
+  confirmLabel: 'Confirm',
+  cancelLabel: 'Cancel',
+  danger: false,
+  resolve: null
+};
 
 function requestRender() {
   if (renderQueued) return;
@@ -56,6 +65,41 @@ function setError(message) {
 function clearMessages() {
   errorMessage = '';
   infoMessage = '';
+}
+
+function openConfirmModal({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+  if (confirmModalState.open) {
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    confirmModalState = {
+      open: true,
+      title: String(title || 'Confirm Action'),
+      message: String(message || ''),
+      confirmLabel: String(confirmLabel || 'Confirm'),
+      cancelLabel: String(cancelLabel || 'Cancel'),
+      danger: Boolean(danger),
+      resolve
+    };
+    requestRender();
+  });
+}
+
+function closeConfirmModal(result = false) {
+  if (!confirmModalState.open) return;
+  const resolver = confirmModalState.resolve;
+  confirmModalState = {
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    danger: false,
+    resolve: null
+  };
+  requestRender();
+  resolver?.(result);
 }
 
 function render() {
@@ -118,6 +162,7 @@ function render() {
         }
       </main>
     </div>
+    <div id="prefsModal" class="app-modal ${confirmModalState.open ? '' : 'hidden'}" aria-hidden="${confirmModalState.open ? 'false' : 'true'}"></div>
   `;
 
   if (searchQuery) {
@@ -146,6 +191,35 @@ function render() {
   if (activeSectionId === 'diagnostics') {
     const pre = document.getElementById('diagnosticsLogOutput');
     if (pre) pre.textContent = diagnosticsText || 'No diagnostics logs yet.';
+  }
+
+  const modalHost = document.getElementById('prefsModal');
+  if (modalHost) {
+    if (confirmModalState.open) {
+      modalHost.innerHTML = `
+        <div class="modal-card ${confirmModalState.danger ? 'is-danger' : ''}" role="dialog" aria-modal="true" aria-label="${escapeHtml(confirmModalState.title)}">
+          <h3>${escapeHtml(confirmModalState.title)}</h3>
+          <div class="modal-copy">${escapeHtml(confirmModalState.message)}</div>
+          <div class="modal-actions">
+            <button id="prefsConfirmCancelBtn" type="button">${escapeHtml(confirmModalState.cancelLabel)}</button>
+            <button id="prefsConfirmActionBtn" type="button" class="${confirmModalState.danger ? 'destructive' : ''}">${escapeHtml(confirmModalState.confirmLabel)}</button>
+          </div>
+        </div>
+      `;
+      modalHost.classList.remove('hidden');
+      modalHost.setAttribute('aria-hidden', 'false');
+    } else {
+      modalHost.innerHTML = '';
+      modalHost.classList.add('hidden');
+      modalHost.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  if (confirmModalState.open) {
+    const modalPrimary = document.getElementById('prefsConfirmActionBtn');
+    if (modalPrimary instanceof HTMLElement && !modalPrimary.contains(document.activeElement)) {
+      modalPrimary.focus();
+    }
   }
 }
 
@@ -189,7 +263,9 @@ async function bootstrap() {
     },
     onRender: requestRender,
     onInfo: setInfo,
-    onError: setError
+    onError: setError,
+    openConfirmModal,
+    closeConfirmModal
   });
 
   settingsManager.onChange(() => requestRender());

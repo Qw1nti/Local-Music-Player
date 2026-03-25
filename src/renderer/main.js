@@ -95,6 +95,15 @@ let playlistNameModalState = {
   draft: '',
   resolve: null
 };
+let confirmModalState = {
+  open: false,
+  title: '',
+  message: '',
+  confirmLabel: 'Confirm',
+  cancelLabel: 'Cancel',
+  danger: false,
+  resolve: null
+};
 let pendingQueueFocusIndex = null;
 
 const playerDom = {
@@ -263,6 +272,41 @@ function submitPlaylistNameModal(nextValue) {
     return;
   }
   closePlaylistNameModal(trimmed);
+}
+
+function openConfirmModal({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+  if (confirmModalState.open) {
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    confirmModalState = {
+      open: true,
+      title: String(title || 'Confirm Action'),
+      message: String(message || ''),
+      confirmLabel: String(confirmLabel || 'Confirm'),
+      cancelLabel: String(cancelLabel || 'Cancel'),
+      danger: Boolean(danger),
+      resolve
+    };
+    render();
+  });
+}
+
+function closeConfirmModal(result = false) {
+  if (!confirmModalState.open) return;
+  const resolver = confirmModalState.resolve;
+  confirmModalState = {
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    danger: false,
+    resolve: null
+  };
+  render();
+  resolver?.(result);
 }
 
 function clearImportSummary() {
@@ -883,11 +927,22 @@ function bindEvents() {
       if (duplicateModalState.open) resolveDuplicateModalChoice('cancel');
       if (issuesModalState.open) closeIssuesModal();
       if (playlistNameModalState.open) closePlaylistNameModal();
+      if (confirmModalState.open) closeConfirmModal(false);
       return;
     }
 
     if (target.id === 'playlistNameCancelBtn') {
       closePlaylistNameModal();
+      return;
+    }
+
+    if (target.id === 'confirmCancelBtn') {
+      closeConfirmModal(false);
+      return;
+    }
+
+    if (target.id === 'confirmActionBtn') {
+      closeConfirmModal(true);
       return;
     }
 
@@ -935,13 +990,20 @@ function bindEvents() {
     if (target.id === 'deletePlaylistBtn') {
       const playlist = store.getActivePlaylist();
       if (!playlist) return;
-      if (window.confirm(`Delete playlist "${playlist.name}"?`)) {
+      void openConfirmModal({
+        title: 'Delete Playlist',
+        message: `Delete playlist "${playlist.name}"? This cannot be undone.`,
+        confirmLabel: 'Delete',
+        cancelLabel: 'Keep Playlist',
+        danger: true
+      }).then((confirmed) => {
+        if (!confirmed) return;
         const snapshot = { ...playlist, trackIds: [...playlist.trackIds] };
         store.deletePlaylist(playlist.id);
         showUndoToast(`Deleted playlist "${playlist.name}"`, () => {
           store.restorePlaylistSnapshot(snapshot, true);
         });
-      }
+      });
       return;
     }
 
@@ -1311,12 +1373,13 @@ function bindEvents() {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open) {
+    if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open || confirmModalState.open) {
       if (event.key === 'Escape') {
         event.preventDefault();
         if (duplicateModalState.open) resolveDuplicateModalChoice('cancel');
         if (issuesModalState.open) closeIssuesModal();
         if (playlistNameModalState.open) closePlaylistNameModal();
+        if (confirmModalState.open) closeConfirmModal(false);
         return;
       }
       if (event.key === 'Tab') {
@@ -1645,6 +1708,19 @@ function render() {
         </div>
       </form>
     `;
+  } else if (confirmModalState.open) {
+    modalHost.classList.remove('hidden');
+    modalHost.setAttribute('aria-hidden', 'false');
+    modalHost.innerHTML = `
+      <div class="modal-card ${confirmModalState.danger ? 'is-danger' : ''}" role="dialog" aria-modal="true" aria-label="${escapeHtml(confirmModalState.title)}">
+        <h3>${escapeHtml(confirmModalState.title)}</h3>
+        <div class="modal-copy">${escapeHtml(confirmModalState.message)}</div>
+        <div class="modal-actions">
+          <button id="confirmCancelBtn" type="button">${escapeHtml(confirmModalState.cancelLabel)}</button>
+          <button id="confirmActionBtn" type="button" class="${confirmModalState.danger ? 'destructive' : ''}">${escapeHtml(confirmModalState.confirmLabel)}</button>
+        </div>
+      </div>
+    `;
   } else {
     modalHost.classList.add('hidden');
     modalHost.setAttribute('aria-hidden', 'true');
@@ -1660,7 +1736,7 @@ function render() {
     }
   }
 
-  if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open) {
+  if (duplicateModalState.open || issuesModalState.open || playlistNameModalState.open || confirmModalState.open) {
     const modalPrimary = playlistNameModalState.open
       ? modalHost.querySelector('#playlistNameInput')
       : modalHost.querySelector('button');
