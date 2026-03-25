@@ -11,6 +11,7 @@
     "test": "node --test test/*.test.js",
     "build:mac": "bash ./scripts/package-mac.sh",
     "release:mac": "bash ./scripts/release-mac.sh",
+    "install:mac": "bash ./scripts/install-mac.sh",
     "build:win": "bash ./scripts/package-win.sh",
     "build:linux": "bash ./scripts/package-linux.sh",
     "smoke:packages": "bash ./scripts/smoke-packages.sh"

@@ -41,6 +41,14 @@ Add screenshots here before publishing if you want the GitHub page to show the U
 
 ### For Mac users
 
+Option A: one command
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Qw1nti/Local-Music-Player/main/scripts/install-mac.sh | bash
+```
+
+Option B: manual download
+
 1. Open the latest GitHub Release.
 2. Download `LocalMusicPlayer-mac-arm64.zip`.
 3. Unzip it.
@@ -96,6 +104,7 @@ npm run build:linux
 ```bash
 npm run dev
 npm start
+npm run install:mac
 npm run check
 npm test
 npm run build:mac
@@ -260,6 +269,8 @@ npm run release:mac
 ### GitHub release install
 
 If you are publishing this repository publicly, attach `dist/LocalMusicPlayer-mac-arm64.zip` to the GitHub Release so Mac users can install by downloading, unzipping, and dragging the app into `Applications`.
+
+For a one-command install, the release installer script downloads that ZIP automatically and installs the app into `~/Applications`.
 
 ## Testing
 
