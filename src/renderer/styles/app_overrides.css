@@ -13,6 +13,23 @@
   --muted: #a6b6d8;
 }
 
+:root[data-theme-tone='light'] {
+  --bg: #f4f7fb;
+  --bg-soft: #ffffff;
+  --bg-elevated: #ffffff;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-strong: rgba(244, 247, 252, 0.98);
+  --surface-soft: rgba(255, 255, 255, 0.7);
+  --line: rgba(76, 94, 124, 0.18);
+  --line-strong: rgba(76, 94, 124, 0.3);
+  --text: #122033;
+  --muted: #52627c;
+  --accent: #155eef;
+  --accent-strong: #b45f06;
+  --accent-soft: rgba(21, 94, 239, 0.12);
+  --danger: #b4232d;
+}
+
 html,
 body {
   background:
@@ -32,6 +49,103 @@ body::after {
     radial-gradient(circle at 82% 16%, rgba(244, 179, 106, 0.08), transparent 25%);
   filter: blur(12px);
   opacity: 0.9;
+}
+
+html[data-theme-tone='light'],
+html[data-theme-tone='light'] body {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(21, 94, 239, 0.12), transparent 30%),
+    radial-gradient(circle at 86% 10%, rgba(180, 95, 6, 0.11), transparent 24%),
+    radial-gradient(circle at 50% 102%, rgba(114, 141, 183, 0.16), transparent 34%),
+    linear-gradient(180deg, #f7f9fd 0%, #eef3fa 48%, #f8fafc 100%) !important;
+}
+
+html[data-theme-tone='light'] body::after {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(21, 94, 239, 0.06), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(180, 95, 6, 0.06), transparent 25%);
+  opacity: 0.55;
+}
+
+:root[data-theme-tone='light'] button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(237, 242, 248, 0.94));
+  color: #122033;
+  border-color: rgba(76, 94, 124, 0.18);
+}
+
+:root[data-theme-tone='light'] button:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(230, 237, 246, 0.98));
+}
+
+:root[data-theme-tone='light'] button.primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(21, 94, 239, 0.98), rgba(72, 110, 255, 0.98));
+}
+
+:root[data-theme-tone='light'] input[type='search'],
+:root[data-theme-tone='light'] input[type='text'],
+:root[data-theme-tone='light'] input[type='number'],
+:root[data-theme-tone='light'] select,
+:root[data-theme-tone='light'] textarea {
+  background: rgba(255, 255, 255, 0.92);
+  color: #122033;
+  border-color: rgba(76, 94, 124, 0.18);
+}
+
+:root[data-theme-tone='light'] input[type='search']::placeholder,
+:root[data-theme-tone='light'] input[type='text']::placeholder,
+:root[data-theme-tone='light'] textarea::placeholder {
+  color: rgba(82, 98, 124, 0.7);
+}
+
+:root[data-theme-tone='light'] .glass-panel,
+:root[data-theme-tone='light'] .left-rail,
+:root[data-theme-tone='light'] .right-rail,
+:root[data-theme-tone='light'] .view,
+:root[data-theme-tone='light'] .playlist-shell,
+:root[data-theme-tone='light'] .queue-panel,
+:root[data-theme-tone='light'] .prefs-section,
+:root[data-theme-tone='light'] .prefs-search,
+:root[data-theme-tone='light'] .prefs-header,
+:root[data-theme-tone='light'] .modal-card,
+:root[data-theme-tone='light'] .theme-card,
+:root[data-theme-tone='light'] .onboarding-card,
+:root[data-theme-tone='light'] .now-rail-card,
+:root[data-theme-tone='light'] .now-rail-meta,
+:root[data-theme-tone='light'] .smart-view-grid article,
+:root[data-theme-tone='light'] .stats-grid article,
+:root[data-theme-tone='light'] .diag-log,
+:root[data-theme-tone='light'] .bulk-actions,
+:root[data-theme-tone='light'] .player-bar,
+:root[data-theme-tone='light'] .playlist-item,
+:root[data-theme-tone='light'] .track-row,
+:root[data-theme-tone='light'] .queue-row {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(76, 94, 124, 0.16) !important;
+}
+
+:root[data-theme-tone='light'] .track-row.is-now-playing,
+:root[data-theme-tone='light'] .queue-row.is-current,
+:root[data-theme-tone='light'] .playlist-item.active,
+:root[data-theme-tone='light'] .nav-btn.active {
+  border-color: rgba(21, 94, 239, 0.35) !important;
+  box-shadow: inset 0 0 0 1px rgba(21, 94, 239, 0.1), 0 18px 30px rgba(15, 26, 44, 0.1) !important;
+}
+
+:root[data-theme-tone='light'] .track-row.is-up-next,
+:root[data-theme-tone='light'] .queue-row.is-up-next {
+  background: linear-gradient(90deg, rgba(244, 179, 106, 0.14), rgba(255, 255, 255, 0.84)) !important;
+}
+
+:root[data-theme-tone='light'] .banner {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(238, 243, 250, 0.92));
+  color: #122033;
+  border-color: rgba(76, 94, 124, 0.16);
+}
+
+:root[data-theme-tone='light'] .player-badge,
+:root[data-theme-tone='light'] .pill {
+  background: rgba(255, 255, 255, 0.88) !important;
 }
 
 .glass-panel,

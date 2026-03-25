@@ -50,6 +50,7 @@ export class SettingsManager {
     this.unsub = null;
     this.listeners = new Set();
     this.lastMutationId = 0;
+    this.lastAppliedSignature = '';
   }
 
   async init() {
@@ -62,6 +63,11 @@ export class SettingsManager {
     this.applyToDocument(document);
 
     this.unsub = this.api.onSettingsChanged((next) => {
+      const signature = this.getDocumentSignature(next);
+      if (signature === this.lastAppliedSignature) {
+        this.settings = next;
+        return;
+      }
       this.settings = next;
       this.applyToDocument(document);
       this.notifyListeners();
@@ -105,9 +111,14 @@ export class SettingsManager {
       const next = await this.api.updateSetting(path, value);
       // Ignore stale responses when multiple updates are in-flight.
       if (mutationId === this.lastMutationId) {
-        this.settings = next;
-        this.applyToDocument(document);
-        this.notifyListeners();
+        const nextSignature = this.getDocumentSignature(next);
+        if (nextSignature !== this.lastAppliedSignature) {
+          this.settings = next;
+          this.applyToDocument(document);
+          this.notifyListeners();
+        } else {
+          this.settings = next;
+        }
       }
       return next;
     } catch (error) {
@@ -132,10 +143,23 @@ export class SettingsManager {
     return next;
   }
 
+  getDocumentSignature(settings) {
+    if (!settings) return '';
+    return JSON.stringify({
+      uiScale: Number(settings.appearance?.uiScale ?? 1),
+      density: String(settings.appearance?.density || 'comfortable'),
+      activeThemeId: String(settings.themes?.activeThemeId || 'dark'),
+      customTheme: normalizeCustomThemeTokens(settings.themes?.customTheme?.tokens)
+    });
+  }
+
   applyToDocument(doc) {
     if (!this.settings || !doc?.documentElement) return;
 
     const root = doc.documentElement;
+    const signature = this.getDocumentSignature(this.settings);
+    if (signature === this.lastAppliedSignature) return;
+    this.lastAppliedSignature = signature;
 
     const uiScale = Number(this.settings.appearance?.uiScale ?? 1);
     root.style.setProperty('--ui-scale', String(uiScale));
@@ -144,6 +168,7 @@ export class SettingsManager {
 
     const activeThemeId = String(this.settings.themes?.activeThemeId || 'dark');
     root.dataset.theme = activeThemeId;
+    root.dataset.themeTone = isLightThemeId(activeThemeId) ? 'light' : 'dark';
     root.style.colorScheme = isLightThemeId(activeThemeId) ? 'light' : 'dark';
 
     const customTokens = normalizeCustomThemeTokens(this.settings.themes?.customTheme?.tokens);
