@@ -7,6 +7,7 @@ TARGET_APP="$TARGET_DIR/$APP_NAME.app"
 TMP_DIR="$(mktemp -d /tmp/${APP_NAME}.install.XXXXXX)"
 ZIP_PATH="$TMP_DIR/${APP_NAME}-mac-arm64.zip"
 DOWNLOAD_URL="${DOWNLOAD_URL:-https://github.com/Qw1nti/Local-Music-Player/releases/latest/download/LocalMusicPlayer-mac-arm64.zip}"
+SOURCE_URL="${SOURCE_URL:-https://github.com/Qw1nti/Local-Music-Player/archive/refs/heads/main.zip}"
 SOURCE_ZIP="${1:-}"
 
 cleanup() {
@@ -22,7 +23,27 @@ if [[ -n "$SOURCE_ZIP" ]]; then
   cp "$SOURCE_ZIP" "$ZIP_PATH"
 else
   echo "Downloading latest release from GitHub..."
-  curl -fL "$DOWNLOAD_URL" -o "$ZIP_PATH"
+  if ! curl -fL "$DOWNLOAD_URL" -o "$ZIP_PATH"; then
+    echo "Release archive not available yet; building from source instead."
+    BUILD_DIR="$TMP_DIR/source"
+    mkdir -p "$BUILD_DIR"
+    curl -fL "$SOURCE_URL" -o "$TMP_DIR/source.zip"
+    ditto -x -k "$TMP_DIR/source.zip" "$BUILD_DIR"
+    SOURCE_ROOT="$(find "$BUILD_DIR" -maxdepth 1 -type d -name 'Local-Music-Player-*' | head -n 1)"
+    if [[ -z "${SOURCE_ROOT:-}" ]]; then
+      echo "Could not unpack source archive from $SOURCE_URL" >&2
+      exit 1
+    fi
+    if [[ ! -f "$SOURCE_ROOT/package.json" ]]; then
+      echo "Source archive is missing package.json at: $SOURCE_ROOT" >&2
+      exit 1
+    fi
+    pushd "$SOURCE_ROOT" >/dev/null
+    npm install
+    npm run release:mac
+    popd >/dev/null
+    exit 0
+  fi
 fi
 
 rm -rf "$TMP_DIR/app"

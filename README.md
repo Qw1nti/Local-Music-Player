@@ -47,6 +47,8 @@ Option A: one command
 curl -fsSL https://raw.githubusercontent.com/Qw1nti/Local-Music-Player/main/scripts/install-mac.sh | bash
 ```
 
+This command first tries to install from the latest GitHub Release. If no release ZIP is available yet, it falls back to building from the public source and then installs the app into `~/Applications`.
+
 Option B: manual download
 
 1. Open the latest GitHub Release.
