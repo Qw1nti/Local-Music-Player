@@ -43,12 +43,40 @@ function renderThemes(settings) {
         --preview-surface: ${preview['--surface']};
         --preview-surface-strong: ${preview['--surface-strong']};
         --preview-line: ${preview['--line']};
+        --preview-text: ${preview['--text']};
+        --preview-muted: ${preview['--muted']};
       ">
         <div class="theme-preview">
-          <div class="bar"></div>
-          <div class="body">
-            <div class="chip"></div>
-            <div class="chip subtle"></div>
+          <div class="preview-topbar">
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <div class="preview-pill"></div>
+          </div>
+          <div class="preview-body">
+            <div class="preview-rail">
+              <div class="rail-item active"></div>
+              <div class="rail-item"></div>
+              <div class="rail-item"></div>
+            </div>
+            <div class="preview-stage">
+              <div class="preview-hero">
+                <strong>Library</strong>
+                <span>12 tracks</span>
+              </div>
+              <div class="preview-track active">
+                <span class="track-title"></span>
+                <span class="track-meta"></span>
+              </div>
+              <div class="preview-track">
+                <span class="track-title"></span>
+                <span class="track-meta"></span>
+              </div>
+            </div>
+          </div>
+          <div class="preview-player">
+            <span class="player-chip"></span>
+            <span class="preview-progress"></span>
           </div>
         </div>
         <div class="label-row"><strong>${escapeHtml(theme.label)}</strong><span>${isSelected ? 'Active' : ''}</span></div>
