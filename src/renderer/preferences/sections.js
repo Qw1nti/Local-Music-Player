@@ -23,7 +23,7 @@ export const PREFERENCES_SEARCH_INDEX = [
   { sectionId: 'playback', terms: ['default volume', 'crossfade', 'gapless playback', 'replay gain', 'playlist ends'] },
   { sectionId: 'library', terms: ['auto-scan on launch', 'show missing tracks', 'refresh library'] },
   { sectionId: 'appearance', terms: ['ui scale', 'density', 'album artwork'] },
-  { sectionId: 'themes', terms: ['built-in themes', 'custom theme', 'theme tokens', 'export custom theme'] },
+  { sectionId: 'themes', terms: ['curated themes', 'built-in themes', 'custom theme', 'theme tokens', 'export custom theme'] },
   { sectionId: 'advanced', terms: ['debug logging', 'clear library cache', 'export data', 'import data', 'reset settings'] },
   { sectionId: 'diagnostics', terms: ['diagnostics logs', 'refresh', 'copy', 'clear logs'] }
 ];
@@ -52,6 +52,7 @@ function renderThemes(settings) {
           </div>
         </div>
         <div class="label-row"><strong>${escapeHtml(theme.label)}</strong><span>${isSelected ? 'Active' : ''}</span></div>
+        <p class="theme-note">${escapeHtml(theme.description || '')}</p>
       </div>
     `;
   }).join('');
@@ -68,7 +69,7 @@ function renderThemes(settings) {
 
   return `
     <div class="prefs-section">
-      <h3>Built-in Themes</h3>
+      <h3>Curated Themes</h3>
       <div class="themes-grid">${cards}</div>
     </div>
 

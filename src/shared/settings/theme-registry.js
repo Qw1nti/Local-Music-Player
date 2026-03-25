@@ -9,38 +9,24 @@ export const BUILTIN_THEMES = [
   {
     id: 'dark',
     label: 'Dark',
+    description: 'Balanced dark mode with bright text and cool blue accents.',
     tokens: {
-      '--bg': '#091021',
-      '--bg-soft': '#111a33',
-      '--surface': '#16213f',
-      '--surface-strong': '#1b2a4e',
-      '--line': '#2c3f68',
-      '--text': '#f4f8ff',
-      '--muted': '#9cb1d8',
-      '--accent': '#5bc0ff',
-      '--accent-soft': '#1b5ea6',
+      '--bg': '#07111f',
+      '--bg-soft': '#101c32',
+      '--surface': '#16233f',
+      '--surface-strong': '#1d2d4f',
+      '--line': '#2d416c',
+      '--text': '#f5f8ff',
+      '--muted': '#a8b9da',
+      '--accent': '#6bc6ff',
+      '--accent-soft': '#1f5b90',
       '--danger': '#ff6f7d'
-    }
-  },
-  {
-    id: 'light',
-    label: 'Light',
-    tokens: {
-      '--bg': '#f5f7fb',
-      '--bg-soft': '#ffffff',
-      '--surface': '#ffffff',
-      '--surface-strong': '#eef2f8',
-      '--line': '#d7deec',
-      '--text': '#0f1a2b',
-      '--muted': '#52627c',
-      '--accent': '#155eef',
-      '--accent-soft': '#dbe7ff',
-      '--danger': '#c6283d'
     }
   },
   {
     id: 'midnight',
     label: 'Midnight',
+    description: 'Deeper blue-black contrast for a moody, high-glow look.',
     tokens: {
       '--bg': '#050714',
       '--bg-soft': '#0a0f25',
@@ -55,99 +41,54 @@ export const BUILTIN_THEMES = [
     }
   },
   {
-    id: 'neon',
-    label: 'Neon',
+    id: 'light',
+    label: 'Light',
+    description: 'Clean daylight surfaces with strong text contrast.',
     tokens: {
-      '--bg': '#070810',
-      '--bg-soft': '#0c0f1e',
-      '--surface': '#111532',
-      '--surface-strong': '#151b43',
-      '--line': '#2b2f6b',
-      '--text': '#f7fbff',
-      '--muted': '#9ea8d6',
-      '--accent': '#00e5ff',
-      '--accent-soft': '#113a55',
-      '--danger': '#ff4df3'
-    }
-  },
-  {
-    id: 'minimal',
-    label: 'Minimal',
-    tokens: {
-      '--bg': '#0f1115',
-      '--bg-soft': '#141720',
-      '--surface': '#161b24',
-      '--surface-strong': '#1a2030',
-      '--line': '#2a3142',
-      '--text': '#f4f6fb',
-      '--muted': '#a7b0c2',
-      '--accent': '#c8ff2c',
-      '--accent-soft': '#2b3520',
-      '--danger': '#ff6f7d'
+      '--bg': '#f5f7fb',
+      '--bg-soft': '#ffffff',
+      '--surface': '#ffffff',
+      '--surface-strong': '#edf2f8',
+      '--line': '#d5deeb',
+      '--text': '#0f1a2b',
+      '--muted': '#50627e',
+      '--accent': '#155eef',
+      '--accent-soft': '#dbe7ff',
+      '--danger': '#b4232d'
     }
   },
   {
     id: 'sage-daybreak',
     label: 'Sage Daybreak',
+    description: 'Soft green-gold palette for a calmer, editorial feel.',
     tokens: {
-      '--bg': '#eff6f3',
-      '--bg-soft': '#f7f6ed',
-      '--surface': '#f5f6ef',
-      '--surface-strong': '#deede7',
-      '--line': '#bddbd0',
+      '--bg': '#edf5f1',
+      '--bg-soft': '#f7f8f4',
+      '--surface': '#f7f8f4',
+      '--surface-strong': '#ddebe4',
+      '--line': '#bbd2c7',
       '--text': '#12211b',
-      '--muted': '#48846e',
-      '--accent': '#8f843d',
-      '--accent-soft': '#e0dbb8',
-      '--danger': '#c6283d'
-    }
-  },
-  {
-    id: 'olive-nightfall',
-    label: 'Olive Nightfall',
-    tokens: {
-      '--bg': '#0d1713',
-      '--bg-soft': '#16170d',
-      '--surface': '#202112',
-      '--surface-strong': '#24210f',
-      '--line': '#404224',
-      '--text': '#f5f6ef',
-      '--muted': '#b3b77b',
-      '--accent': '#b3a54d',
-      '--accent-soft': '#6b632e',
-      '--danger': '#ff6f7d'
-    }
-  },
-  {
-    id: 'violet-afterdark',
-    label: 'Violet Afterdark',
-    tokens: {
-      '--bg': '#000000',
-      '--bg-soft': '#291528',
-      '--surface': '#3a3e3b',
-      '--surface-strong': '#291528',
-      '--line': '#9e829c',
-      '--text': '#f0eff4',
-      '--muted': '#c7b7c5',
-      '--accent': '#9e829c',
-      '--accent-soft': '#3a3e3b',
-      '--danger': '#ff6f7d'
+      '--muted': '#4d7f6a',
+      '--accent': '#7c8d4b',
+      '--accent-soft': '#dce3c0',
+      '--danger': '#b4232d'
     }
   },
   {
     id: 'mauve-morning',
     label: 'Mauve Morning',
+    description: 'Warm mauve neutrals with a softer music-editor aesthetic.',
     tokens: {
-      '--bg': '#f0eff4',
+      '--bg': '#f1eef5',
       '--bg-soft': '#ffffff',
-      '--surface': '#f6f5f8',
-      '--surface-strong': '#e7e1eb',
-      '--line': '#c9bac7',
-      '--text': '#291528',
-      '--muted': '#5a5059',
-      '--accent': '#9e829c',
-      '--accent-soft': '#e7dfe6',
-      '--danger': '#c6283d'
+      '--surface': '#f8f6fa',
+      '--surface-strong': '#e7dfea',
+      '--line': '#c8b9c7',
+      '--text': '#261529',
+      '--muted': '#615162',
+      '--accent': '#8f6f8d',
+      '--accent-soft': '#e7dcea',
+      '--danger': '#b4232d'
     }
   }
 ];
