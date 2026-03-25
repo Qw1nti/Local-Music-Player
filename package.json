@@ -1,0 +1,22 @@
+{
+  "name": "electron-music-player-rebuild",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "bash ./scripts/launch-electron-mac.sh",
+    "dev": "bash ./scripts/launch-electron-mac.sh",
+    "check": "find src \\( -name '*.js' -o -name '*.cjs' \\) -print0 | xargs -0 -n1 node --check",
+    "test": "node --test test/*.test.js",
+    "build:mac": "bash ./scripts/package-mac.sh",
+    "release:mac": "bash ./scripts/release-mac.sh",
+    "build:win": "bash ./scripts/package-win.sh",
+    "build:linux": "bash ./scripts/package-linux.sh",
+    "smoke:packages": "bash ./scripts/smoke-packages.sh"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.4.4",
+    "electron": "^41.0.3"
+  }
+}
